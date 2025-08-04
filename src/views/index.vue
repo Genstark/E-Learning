@@ -4,7 +4,7 @@
 	<div class="home">
 		<HelloWorld />
 		<p @click="change">change</p>
-		<button class="w-4">click</button>
+		<button class="text-white">click</button>
 	</div>
 </template>
 
