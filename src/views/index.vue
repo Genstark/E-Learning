@@ -1,11 +1,8 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 
 <template>
-	<div class="home">
-		<HelloWorld />
-		<p @click="change">change</p>
-		<button class="text-white">click</button>
-	</div>
+	<HelloWorld />
+	<button class="border-dotted" @click="change">click</button>
 </template>
 
 <script setup>

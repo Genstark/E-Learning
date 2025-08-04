@@ -1,5 +1,6 @@
 <template>
 	<p>running</p>
+	<p class="bg-blue-500">paragrap</p>
 </template>
 
 <script setup>
