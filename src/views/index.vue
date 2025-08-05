@@ -1,19 +1,14 @@
 <!-- eslint-disable vue/multi-word-component-names -->
-
 <template>
-	<HelloWorld />
-	<button class="border-dotted" @click="change">click</button>
+	<HeaderComponent />
+	<Cards />
 </template>
 
 <script setup>
-import HelloWorld from '@/components/HelloWorld.vue';
-import { useRouter } from 'vue-router';
+import HeaderComponent from '@/components/Header.vue';
+import Cards from '@/components/Cards.vue';
+// import { useRouter } from 'vue-router';
 
-const route = useRouter();
+// const route = useRouter();
 
-function change (event) {
-	event.preventDefault();
-	console.log('Change button clicked');
-	route.push('/about');
-}
 </script>
