@@ -22,6 +22,11 @@ const routes = [
 		name: 'signup',
 		component: () => import('../views/signup.vue')
 	},
+	{
+		path: '/number-bowling',
+		name: 'number-bowling',
+		component: () => import('../views/numberbowling.vue')
+	}
 ];
 
 const router = createRouter({

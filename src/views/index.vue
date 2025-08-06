@@ -8,7 +8,5 @@
 import HeaderComponent from '@/components/Header.vue';
 import Cards from '@/components/Cards.vue';
 // import { useRouter } from 'vue-router';
-
 // const route = useRouter();
-
 </script>
