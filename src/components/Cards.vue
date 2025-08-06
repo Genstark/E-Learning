@@ -1,37 +1,23 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
+import { useRouter } from 'vue-router';
+const route = useRouter();
 const cards = [
     {
         title: 'Card 1',
         description: 'This is card number 1.',
-        image: 'https://via.placeholder.com/400x200'
+        image: 'https://img.freepik.com/free-vector/isometric-online-education-concept_52683-8896.jpg?ga=GA1.1.1207757706.1754455616&semt=ais_hybrid&w=740&q=80'
     },
     {
         title: 'Card 2',
         description: 'This is card number 2.',
-        image: 'https://via.placeholder.com/400x200'
+        image: 'https://img.freepik.com/free-vector/isometric-online-education-concept_52683-8896.jpg?ga=GA1.1.1207757706.1754455616&semt=ais_hybrid&w=740&q=80'
     },
     {
         title: 'Card 3',
         description: 'This is card number 3.',
-        image: 'https://via.placeholder.com/400x200'
+        image: 'https://img.freepik.com/free-vector/isometric-online-education-concept_52683-8896.jpg?ga=GA1.1.1207757706.1754455616&semt=ais_hybrid&w=740&q=80'
     },
-    {
-        title: 'Card 4',
-        description: 'This is card number 4.',
-        image: 'https://via.placeholder.com/400x200'
-    },
-    {
-        title: 'Card 5',
-        description: 'This is card number 5.',
-        image: 'https://via.placeholder.com/400x200'
-    },
-    {
-        title: 'Card 6',
-        description: 'This is card number 6.',
-        image: 'https://via.placeholder.com/400x200'
-    },
-    // Add more cards as needed
 ];
 </script>
 
@@ -44,15 +30,13 @@ const cards = [
             <div v-for="(card, index) in cards" :key="index"
                 class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
                 <!-- Card Image -->
-                <img :src="card.image" :alt="card.title" class="w-full h-48 object-cover" />
-
+                <img :src="card.image" :alt="card.title" class="w-full h-52 object-cover" />
                 <!-- Card Content -->
                 <div class="p-4">
                     <h5 class="text-lg font-semibold text-gray-800 mb-2">{{ card.title }}</h5>
                     <p class="text-sm text-gray-600">{{ card.description }}</p>
-
                     <div class="mt-4">
-                        <button
+                        <button @click="route.push('/number-bowling')"
                             class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
                             Click
                         </button>
@@ -64,4 +48,5 @@ const cards = [
 </template>
 
 
-<style scoped></style>
+<style scoped>
+</style>
