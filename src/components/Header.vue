@@ -1,12 +1,18 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const isMobileMenuOpen = ref(false)
 
 function toggleMobileMenu() {
     isMobileMenuOpen.value = !isMobileMenuOpen.value
 }
+
+// function signup() {
+//     console.log('click');
+// }
 </script>
 
 <template>
@@ -47,12 +53,11 @@ function toggleMobileMenu() {
                         </svg>
                     </div>
 
-                    <a href="#" target="_top"
-                        class="text-sm font-medium text-gray-700 hover:text-black">Sign up</a>
-                    <a href="#" target="_top"
+                    <router-link to="/signup" class="text-sm font-medium text-gray-700 hover:text-black">Sign up</router-link>
+                    <router-link to="/login"
                         class="bg-black text-white text-sm font-medium px-4 py-2 rounded-full hover:bg-gray-800">
                         Log in
-                    </a>
+                    </router-link>
                 </div>
 
                 <!-- Mobile Hamburger -->
@@ -76,12 +81,14 @@ function toggleMobileMenu() {
                 <div class="flex flex-col space-y-2 pt-4">
                     <input type="text" placeholder="Search..."
                         class="pl-4 pr-4 py-2 text-sm border border-gray-300 rounded-full" />
-                    <a href="#" target="_top"
-                        class="border border-gray-300 text-sm font-medium text-gray-700 px-4 py-2 rounded-full text-center hover:bg-gray-100">Sign up</a>
-                    <a href="#" target="_top"
+                    <button @click="router.push('/signup')"
+                        class="border border-gray-300 text-sm font-medium text-gray-700 px-4 py-2 rounded-full text-center hover:bg-gray-100">
+                        Signup
+                    </button>
+                    <button @click="router.push('/login')"
                         class="bg-black text-white text-sm font-medium px-4 py-2 rounded-full text-center hover:bg-gray-800">
                         Log in
-                    </a>
+                    </button>
                 </div>
             </div>
         </div>
