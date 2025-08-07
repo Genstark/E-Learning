@@ -2,15 +2,7 @@ const express = require('express');
 const app = express();
 const { MongoClient} = require('mongodb');
 const cors = require('cors');
-
-app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type'],
-    credentials: true
-}));
-const { MongoClient} = require('mongodb');
-const cors = require('cors');
+require('dotenv').config();
 
 app.use(cors({
     origin: '*',
@@ -22,10 +14,11 @@ app.use(cors({
 // Middleware to parse JSON requests
 app.use(express.json());
 
-const uri = "";
+const uri = process.env.MONGO;
 const client = new MongoClient(uri);
 client.connect().then(() => {
     client.db("E-Learning");
+    console.log("Connected to MongoDB successfully");
 }).catch(err => {
     console.error("Failed to connect to MongoDB:", err);
 });
