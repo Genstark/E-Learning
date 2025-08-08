@@ -26,3 +26,6 @@ pnpm-debug.log*
 # build output
 /dist
 /client
+
+# ignore file
+test.js

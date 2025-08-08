@@ -35,7 +35,7 @@ function rollDice() {
     }
 }
 
-function validateExpression() {
+async function validateExpression() {
     let result;
     try {
         if (!/^[\d\s+\-*/().]+$/.test(userInput.value)) {
@@ -76,6 +76,22 @@ function validateExpression() {
 
     // Stop timer if all targets are cleared
     if (usedTargets.value === 10 && timerInterval) {
+        const response = await fetch('http://localhost:3000/api/submit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                timeTaken: elapsedTime.value,
+                clearedTargets: usedTargets.value
+            })
+        });
+        const data = await response.json();
+        if (data.ok) {
+            alert(`Game submitted successfully!`);
+        } else {
+            alert(`Failed to submit game: ${data.message || 'Unknown error'}`);
+        }
         clearInterval(timerInterval);
         timerInterval = null;
     }

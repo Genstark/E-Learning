@@ -8,9 +8,27 @@ const email = ref('');
 const password = ref('');
 const router = useRouter();
 
-function handleLogin() {
+async function handleLogin() {
 	// Simulate successful login
-	router.push('/'); // or wherever you want to redirect
+	if (!email.value || !password.value) {
+		alert('Please fill in all fields.');
+		return;
+	}
+	const response = await fetch('http://localhost:3000/api/login', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({
+			email: email.value,
+			password: password.value
+		})
+	});
+	if (response.ok) {
+		router.push('/'); // or wherever you want to redirect
+	} else {
+		alert('Login failed. Please check your credentials.');
+	}
 }
 </script>
 
