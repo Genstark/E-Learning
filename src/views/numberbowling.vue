@@ -74,28 +74,37 @@ async function validateExpression() {
     message.value = `Great! You cleared ${result}.`;
     userInput.value = '';
 
-    // Stop timer if all targets are cleared
+    // Stop timer & send result if all targets are cleared
     if (usedTargets.value === 10 && timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+
+        // Format elapsed time as HH:MM:SS
+        const hours = String(Math.floor(elapsedTime.value / 3600)).padStart(2, '0');
+        const minutes = String(Math.floor((elapsedTime.value % 3600) / 60)).padStart(2, '0');
+        const seconds = String(elapsedTime.value % 60).padStart(2, '0');
+        const formattedTime = `${hours}:${minutes}:${seconds}`;
+
         const response = await fetch('http://localhost:3000/api/submit', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                timeTaken: elapsedTime.value,
+                timeTakenSeconds: elapsedTime.value,
+                timeTakenFormatted: formattedTime,
                 clearedTargets: usedTargets.value
             })
         });
+
         const data = await response.json();
         if (data.ok) {
-            alert(`Game submitted successfully!`);
+            alert(`Game submitted successfully! Time: ${formattedTime}`);
         } else {
             alert(`Failed to submit game: ${data.message || 'Unknown error'}`);
         }
-        clearInterval(timerInterval);
-        timerInterval = null;
     }
 }
+
+
 
 function resetGame() {
     targetNumbers.value = Array.from({ length: 10 }, (_, i) => ({
@@ -142,14 +151,13 @@ function resetGame() {
                     num.disabled
                         ? 'bg-gray-300 text-gray-500 line-through scale-95'
                         : 'bg-indigo-50 text-indigo-700 border border-indigo-400 hover:bg-indigo-100 hover:scale-105'
-                    ]"
-                >
+                ]">
                     {{ num.value }}
                 </div>
             </div>
 
             <!-- Input -->
-            <input type="text" v-model="userInput" placeholder="e.g. (6+6)/3"
+            <input type="text" v-model="userInput" placeholder="e.g. (6+6)/3" @keyup.enter="validateExpression"
                 class="w-full px-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-400 text-center text-base mb-4 shadow-sm" />
 
             <!-- Buttons -->

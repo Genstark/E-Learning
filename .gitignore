@@ -27,5 +27,6 @@ pnpm-debug.log*
 /dist
 /client
 
-# ignore file
+# ignore file / folder
 test.js
+testing
