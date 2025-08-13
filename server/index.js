@@ -103,7 +103,6 @@ app.post('/api/submit', async (req, res) => {
     if (typeof timeTaken !== 'number' || typeof clearedTargets !== 'number') {
         return res.status(400).json({ error: 'Invalid data' });
     }
-    console.log(timeTaken, clearedTargets, totalTime);
     try {
         await client.db("E-Learning").collection("number-bowling-score").insertOne({
             timeTaken,
