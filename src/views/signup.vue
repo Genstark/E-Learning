@@ -3,7 +3,9 @@
 <script setup>
 import Header from '@/components/Header.vue';
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const name = ref('');
 const email = ref('');
 const password = ref('');
@@ -52,12 +54,13 @@ async function handleSignup() {
 
         const data = await response.json();
         
-        if (data.success) {
+        if (data.ok) {
             alert(`Signup successful! Welcome, ${data.message}!`);
             name.value = '';
             email.value = '';
             password.value = '';
             confirmPassword.value = '';
+            router.push('/login');
         } else {
             alert(`Signup failed: ${data.message || 'Unknown error'}`);
         }

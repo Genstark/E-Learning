@@ -1,7 +1,10 @@
 const express = require('express');
 const app = express();
-const { MongoClient} = require('mongodb');
+const { MongoClient } = require('mongodb');
 const cors = require('cors');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const {generateSecretKey} = require('./utils/generateSecreteKey');
 require('dotenv').config();
 
 app.use(cors({
@@ -13,6 +16,18 @@ app.use(cors({
 
 // Middleware to parse JSON requests
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+function authenticateToken(req, res, next) {
+    const token = req.header('Authorization').replace('Bearer ', '');
+    try {
+        const decoded = jwt.verify(token, process.env.SECRET_KEY);
+        req.user = decoded;
+        next();
+    } catch (ex) {
+        return res.status(401).json({ error: 'Invalid token' });
+    }
+};
 
 const uri = process.env.MONGO;
 const client = new MongoClient(uri);
@@ -23,9 +38,15 @@ client.connect().then(() => {
     console.error("Failed to connect to MongoDB:", err);
 });
 
+app.get('/validate-token', authenticateToken, (req, res) => {
+    res.json({ message: 'Token is valid' });
+});
+
 app.get('/api', async (req, res) => {
     const name = req.query.name || 'World';
-    res.send('Hello World! '+name);
+    const last = req.query.last || '!';
+    res.json({ message: `Hello ${name} ${last}`, key: generateSecretKey() });
+    // res.send(`Hello World! ${name} ${last}`);
 });
 
 app.post('/api/signup', async (req, res) => {
@@ -33,13 +54,16 @@ app.post('/api/signup', async (req, res) => {
     if (!name || !email || !password) {
         return res.status(400).json({ error: 'All fields are required' });
     }
+    const hashedName = await bcrypt.hash(name, 10);
+    const hashedEmail = await bcrypt.hash(email, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
     try {
         await client.db("E-Learning").collection("users").insertOne({
-            name,
-            email,
-            password
+            name: hashedName,
+            email: hashedEmail,
+            password: hashedPassword
         });
-        res.status(201).json({ message: 'User created successfully', success: true });
+        res.status(201).json({ message: 'User created successfully', ok: true });
     } catch (error) {
         console.error('something invalid from input');
         console.error("Error inserting user:", error);
@@ -47,25 +71,64 @@ app.post('/api/signup', async (req, res) => {
     }
 });
 
-app.post('/api/signup', async (req, res) => {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password) {
+app.post('/api/login', async (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) {
         return res.status(400).json({ error: 'All fields are required' });
     }
     try {
-        await client.db("E-Learning").collection("users").insertOne({
-            name,
-            email,
-            password
-        });
-        res.status(201).json({ message: 'User created successfully', success: true });
+        const allUsers = await client.db("E-Learning").collection("users").find().toArray();
+        // const user = await client.db("E-Learning").collection("users").findOne({ email });
+        if (!allUsers) {
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+        for (let i = 0; i < allUsers.length; i++) {
+            if (await bcrypt.compare(email, allUsers[i].email)) {
+                const isUserEmail = await bcrypt.compare(email, allUsers[i].email);
+                const isPasswordValid = await bcrypt.compare(password, allUsers[i].password);
+                if (isPasswordValid && isUserEmail) {
+                    const token = jwt.sign({ email: allUsers[i].email }, generateSecretKey(), { expiresIn: '3d' });
+                    return res.status(200).json({ message: 'Login successful', ok: true, token });
+                }
+            }
+        }
+        res.status(401).json({ error: 'Invalid email or password' });
     } catch (error) {
-        console.error('something invalid from input');
-        console.error("Error inserting user:", error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-app.listen(3000, () => {
-    console.log(`Server is running on port http://localhost:3000`);
+app.post('/api/submit', async (req, res) => {
+    const { timeTaken, clearedTargets, totalTime } = req.body;
+    if (typeof timeTaken !== 'number' || typeof clearedTargets !== 'number') {
+        return res.status(400).json({ error: 'Invalid data' });
+    }
+    try {
+        await client.db("E-Learning").collection("number-bowling-score").insertOne({
+            timeTaken,
+            clearedTargets,
+            submittedAt: new Date()
+        });
+        res.status(201).json({ message: 'Score submitted successfully', ok: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/number-bowling/data', async (req, res) => {
+    try {
+        const bowlingData = await client.db("E-Learning").collection("number-bowling-score").find().toArray();
+        if (bowlingData.length > 0) {
+            res.status(200).json(bowlingData);
+        }
+        else {
+            res.status(404).json({ message: 'No bowling data found' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.listen(process.env.PORT || 3000, () => {
+    console.log(`Server is running on port http://localhost:${process.env.PORT || 3000}`);
 });
