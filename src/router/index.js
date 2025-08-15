@@ -44,7 +44,7 @@ router.beforeEach(async (to, from, next) => {
         }
     }
     try {
-        const response = await fetch('/validate-token', {
+        const response = await fetch('/api/validate-token', {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -55,7 +55,6 @@ router.beforeEach(async (to, from, next) => {
             return next({ path: '/login' });
         }
     } catch (error) {
-        console.error('Error:', error);
         return next({ path: '/login' });
     }
 });

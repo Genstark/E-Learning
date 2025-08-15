@@ -4,7 +4,8 @@ const { MongoClient } = require('mongodb');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const {generateSecretKey} = require('./utils/generateSecreteKey');
+const helmet = require('helmet');
+const { generateSecretKey } = require('./utils/generateSecreteKey');
 require('dotenv').config();
 
 app.use(cors({
@@ -17,6 +18,7 @@ app.use(cors({
 // Middleware to parse JSON requests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(helmet());
 
 function authenticateToken(req, res, next) {
     const token = req.header('Authorization').replace('Bearer ', '');
@@ -38,7 +40,7 @@ client.connect().then(() => {
     console.error("Failed to connect to MongoDB:", err);
 });
 
-app.get('/validate-token', authenticateToken, (req, res) => {
+app.get('/api/validate-token', authenticateToken, (req, res) => {
     res.json({ message: 'Token is valid' });
 });
 
@@ -103,12 +105,12 @@ app.post('/api/submit', async (req, res) => {
     if (typeof timeTaken !== 'number' || typeof clearedTargets !== 'number') {
         return res.status(400).json({ error: 'Invalid data' });
     }
-    console.log(timeTaken, clearedTargets, totalTime);
     try {
         await client.db("E-Learning").collection("number-bowling-score").insertOne({
             timeTaken,
             clearedTargets,
-            submittedAt: new Date()
+            totalTime,
+            submittedAt: new Date(),
         });
         res.status(201).json({ message: 'Score submitted successfully', ok: true });
     } catch (error) {
@@ -124,6 +126,20 @@ app.get('/api/number-bowling/data', async (req, res) => {
         }
         else {
             res.status(404).json({ message: 'No bowling data found' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/submit/data', async (req, res) => {
+    try {
+        const submitData = await client.db("E-Learning").collection("users").find().toArray();
+        if (submitData.length > 0) {
+            res.status(200).json(submitData);
+        }
+        else {
+            res.status(404).json({ message: 'No submit data found' });
         }
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
