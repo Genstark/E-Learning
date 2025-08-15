@@ -84,28 +84,28 @@ async function handleSignup() {
                     v-model="name" 
                     placeholder="Full Name"
                     :disabled="isLoading"
-                    class="w-full px-4 py-2 border rounded-md focus:ring focus:ring-pink-200 disabled:opacity-50" 
+                    class="w-full px-4 py-2 border rounded-md focus:ring focus:ring-primary-200 disabled:opacity-50"
                 />
                 <input 
                     type="email" 
                     v-model="email" 
                     placeholder="Email"
                     :disabled="isLoading"
-                    class="w-full px-4 py-2 border rounded-md focus:ring focus:ring-pink-200 disabled:opacity-50" 
+                    class="w-full px-4 py-2 border rounded-md focus:ring focus:ring-primary-200 disabled:opacity-50"
                 />
                 <input 
                     type="password" 
                     v-model="password" 
                     placeholder="Password"
                     :disabled="isLoading"
-                    class="w-full px-4 py-2 border rounded-md focus:ring focus:ring-pink-200 disabled:opacity-50" 
+                    class="w-full px-4 py-2 border rounded-md focus:ring focus:ring-primary-200 disabled:opacity-50"
                 />
                 <input 
                     type="password" 
                     v-model="confirmPassword" 
                     placeholder="Confirm Password"
                     :disabled="isLoading"
-                    class="w-full px-4 py-2 border rounded-md focus:ring focus:ring-pink-200 disabled:opacity-50" 
+                    class="w-full px-4 py-2 border rounded-md focus:ring focus:ring-primary-200 disabled:opacity-50"
                 />
                 <button 
                     @click="handleSignup"
@@ -117,7 +117,7 @@ async function handleSignup() {
             </div>
             <p class="text-sm mt-4 text-center">
                 Already have an account?
-                <router-link to="/login" class="text-pink-500 hover:underline">Log In</router-link>
+                <router-link to="/login" class="text-primary-600 hover:underline">Log In</router-link>
             </p>
         </div>
     </div>
