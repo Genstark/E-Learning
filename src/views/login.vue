@@ -1,6 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <!-- LoginPage.vue -->
 <script setup>
+import Header from '../components/Header.vue';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -32,6 +33,7 @@ async function handleLogin() {
 </script>
 
 <template>
+	<Header />
 	<div class="min-h-screen flex items-center justify-center bg-gray-100">
 		<div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
 			<h2 class="text-2xl font-bold mb-6 text-center">Log In</h2>

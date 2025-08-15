@@ -34,29 +34,29 @@ const router = createRouter({
 	routes
 });
 
-router.beforeEach(async (to, from, next) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        if (to.path === '/login') {
-            return next();
-        } else {
-            return next({ path: '/login' });
-        }
-    }
-    try {
-        const response = await fetch('/api/validate-token', {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-        if (response.ok) {
-            return next();
-        } else {
-            return next({ path: '/login' });
-        }
-    } catch (error) {
-        return next({ path: '/login' });
-    }
-});
+// router.beforeEach(async (to, from, next) => {
+//     const token = localStorage.getItem('token');
+//     if (!token) {
+//         if (to.path === '/login') {
+//             return next();
+//         } else {
+//             return next({ path: '/login' });
+//         }
+//     }
+//     try {
+//         const response = await fetch('/api/validate-token', {
+//             headers: {
+//                 Authorization: `Bearer ${token}`,
+//             },
+//         });
+//         if (response.ok) {
+//             return next();
+//         } else {
+//             return next({ path: '/login' });
+//         }
+//     } catch (error) {
+//         return next({ path: '/login' });
+//     }
+// });
 
 export default router;
