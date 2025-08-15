@@ -21,7 +21,7 @@ function toggleMobileMenu() {
             <div class="flex justify-between items-center py-4">
                 <!-- Left: Logo + Nav -->
                 <div class="flex items-center space-x-6">
-                    <a href="#" class="text-2xl font-bold text-pink-500" id="heading">E-L</a>
+                    <a href="#" class="text-2xl font-bold text-primary-600" id="heading">E-L</a>
 
                     <!-- Nav (hidden on mobile) -->
                     <nav class="hidden md:flex items-center space-x-4">
@@ -34,12 +34,12 @@ function toggleMobileMenu() {
                                 </svg>
                             </button>
                         </div>
-                        <a href="#" target="_top" class="text-sm text-gray-700 hover:text-black">About</a>
-                        <a href="#" target="_top" class="text-sm text-gray-700 hover:text-black">Explore</a>
-                        <a href="#" target="_top" class="text-sm text-gray-700 hover:text-black">Blog</a>
+                        <a href="#" target="_top" class="text-sm text-gray-700 hover:text-primary-600">About</a>
+                        <a href="#" target="_top" class="text-sm text-gray-700 hover:text-primary-600">Explore</a>
+                        <a href="#" target="_top" class="text-sm text-gray-700 hover:text-primary-600">Blog</a>
                     </nav>
                 </div>
-
+ 
                 <!-- Right: Search + Buttons (hidden on mobile) -->
                 <div class="hidden md:flex items-center space-x-4">
                     <div class="relative">
@@ -53,15 +53,15 @@ function toggleMobileMenu() {
                         </svg>
                     </div>
 
-                    <router-link to="/signup" class="text-sm font-medium text-gray-700 hover:text-black">Sign up</router-link>
+                    <router-link to="/signup" class="text-sm font-medium text-gray-700 hover:text-primary-600">Sign up</router-link>
                     <router-link to="/login"
-                        class="bg-black text-white text-sm font-medium px-4 py-2 rounded-full hover:bg-gray-800">
+                        class="bg-primary-600 text-white text-sm font-medium px-4 py-2 rounded-full hover:bg-primary-700">
                         Log in
                     </router-link>
                 </div>
 
                 <!-- Mobile Hamburger -->
-                <div class="md:hidden flex items-center">
+                <div class="md:hidden flex items-center text-gray-700 hover:text-primary-600">
                     <button @click="toggleMobileMenu" class="text-gray-700 hover:text-black focus:outline-none">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -73,20 +73,20 @@ function toggleMobileMenu() {
             <!-- Mobile Menu -->
             <div v-if="isMobileMenuOpen" class="md:hidden space-y-4 pb-4">
                 <nav class="flex flex-col space-y-2">
-                    <a href="#" class="text-sm text-gray-700 hover:text-black">Shots</a>
-                    <a href="#" class="text-sm text-gray-700 hover:text-black">Explore</a>
-                    <a href="#" class="text-sm text-gray-700 hover:text-black">Blog</a>
+                    <a href="#" class="text-sm text-gray-700 hover:text-primary-600">Shots</a>
+                    <a href="#" class="text-sm text-gray-700 hover:text-primary-600">Explore</a>
+                    <a href="#" class="text-sm text-gray-700 hover:text-primary-600">Blog</a>
                 </nav>
 
                 <div class="flex flex-col space-y-2 pt-4">
                     <input type="text" placeholder="Search..."
                         class="pl-4 pr-4 py-2 text-sm border border-gray-300 rounded-full" />
                     <button @click="router.push('/signup')"
-                        class="border border-gray-300 text-sm font-medium text-gray-700 px-4 py-2 rounded-full text-center hover:bg-gray-100">
+                        class="border border-primary-600 text-sm font-medium text-primary-600 px-4 py-2 rounded-full text-center hover:bg-primary-100">
                         Signup
                     </button>
                     <button @click="router.push('/login')"
-                        class="bg-black text-white text-sm font-medium px-4 py-2 rounded-full text-center hover:bg-gray-800">
+                        class="bg-primary-600 text-white text-sm font-medium px-4 py-2 rounded-full text-center hover:bg-primary-700">
                         Log in
                     </button>
                 </div>
