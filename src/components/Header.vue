@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 
 const router = useRouter();
 const isMobileMenuOpen = ref(false)
@@ -13,6 +13,8 @@ function toggleMobileMenu() {
 // function signup() {
 //     console.log('click');
 // }
+
+const route = useRoute();
 </script>
 
 <template>
@@ -53,11 +55,15 @@ function toggleMobileMenu() {
                         </svg>
                     </div>
 
-                    <router-link to="/signup" class="text-sm font-medium text-gray-700 hover:text-primary-600">Sign up</router-link>
-                    <router-link to="/login"
+                    <router-link v-if="route.path !== '/signup'" to="/signup"
+                        class="text-sm font-medium text-gray-700 hover:text-primary-600">Sign
+                        up</router-link>
+                    <router-link v-if="route.path !== '/login'" to="/login"
                         class="bg-primary-600 text-white text-sm font-medium px-4 py-2 rounded-full hover:bg-primary-700">
                         Log in
                     </router-link>
+
+
                 </div>
 
                 <!-- Mobile Hamburger -->
