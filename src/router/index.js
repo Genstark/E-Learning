@@ -26,6 +26,11 @@ const routes = [
 		path: '/number-bowling',
 		name: 'number-bowling',
 		component: () => import('../views/numberbowling.vue')
+	},
+	{
+		path: '/task',
+		name: 'task',
+		component: () => import('../views/task.vue')
 	}
 ];
 
