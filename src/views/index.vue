@@ -7,5 +7,4 @@
 <script setup>
 import HeaderComponent from '@/components/Header.vue';
 import Cards from '@/components/Cards.vue';
-
 </script>
