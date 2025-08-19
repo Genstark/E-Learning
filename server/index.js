@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
 const { generateSecretKey } = require('./utils/generateSecreteKey');
+const fs = require('fs');
 require('dotenv').config();
 
 app.use(cors({
@@ -19,6 +20,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
+// app.use(express.static(path.join(__dirname, 'public')));
 
 function authenticateToken(req, res, next) {
     const token = req.header('Authorization').replace('Bearer ', '');
@@ -35,9 +37,9 @@ const uri = process.env.MONGO;
 const client = new MongoClient(uri);
 client.connect().then(() => {
     client.db("E-Learning");
-    console.log("Connected to MongoDB successfully");
+    console.log("Successfully connected");
 }).catch(err => {
-    console.error("Failed to connect to MongoDB:", err);
+    console.error("Failed to connect:", err);
 });
 
 app.get('/api/validate-token', authenticateToken, (req, res) => {
@@ -145,6 +147,16 @@ app.get('/api/submit/data', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+app.post('/api/submit/daily/tasks', async (req, res) => {
+    const response = req.body;
+    console.log(response);
+    res.status(200).json({ message: 'Daily tasks submitted successfully', ok: true });
+});
+
+// app.get('*', (req, res) => {
+//     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// });
 
 app.listen(process.env.PORT || 3000, () => {
     console.log(`Server is running on port http://localhost:${process.env.PORT || 3000}`);
