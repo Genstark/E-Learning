@@ -8,6 +8,7 @@ import { useRouter } from 'vue-router';
 const email = ref('');
 const password = ref('');
 const router = useRouter();
+
 async function handleLogin() {
 	// Simulate successful login
 	if (!email.value || !password.value) {
