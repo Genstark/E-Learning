@@ -10,7 +10,7 @@
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "dev": "nodemon server/index.js",
-    "start": "nodemon server/index.js"
+    "start": "npm install && npm run build && node server/index.js"
   },
   "dependencies": {
     "autoprefixer": "^10",
@@ -23,6 +23,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.18.0",
+    "path": "^0.12.7",
     "postcss": "^8",
     "tailwindcss": "^3",
     "vue": "^3.2.13",

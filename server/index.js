@@ -1,26 +1,26 @@
 const express = require('express');
-const app = express();
 const { MongoClient } = require('mongodb');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
 const { generateSecretKey } = require('./utils/generateSecreteKey');
-const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
+const app = express();
+
+// Middleware to parse JSON requests
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 }));
-
-// Middleware to parse JSON requests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
-// app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'dist'), { 'extensions': ['html', 'css', 'js'] }));
 
 function authenticateToken(req, res, next) {
     const token = req.header('Authorization').replace('Bearer ', '');
@@ -134,6 +134,7 @@ app.get('/api/number-bowling/data', async (req, res) => {
     }
 });
 
+// testing api
 app.get('/api/submit/data', async (req, res) => {
     try {
         const submitData = await client.db("E-Learning").collection("users").find().toArray();
@@ -154,9 +155,9 @@ app.post('/api/submit/daily/tasks', async (req, res) => {
     res.status(200).json({ message: 'Daily tasks submitted successfully', ok: true });
 });
 
-// app.get('*', (req, res) => {
-//     res.sendFile(path.join(__dirname, 'public', 'index.html'));
-// });
+app.get(/.*/, (req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
 
 app.listen(process.env.PORT || 3000, () => {
     console.log(`Server is running on port http://localhost:${process.env.PORT || 3000}`);

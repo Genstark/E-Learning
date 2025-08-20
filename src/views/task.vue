@@ -20,6 +20,7 @@ const elapsedTime = ref(0);
 let timerInterval = null;
 
 const usedTargets = computed(() => targetNumbers.value.filter(n => n.disabled).length);
+const bowlingComplete = computed(() => usedTargets.value === 10);
 
 // MCQ Questions functionality
 const questions = ref([
@@ -114,9 +115,7 @@ function goToELibrary() {
 }
 
 function rollDice() {
-    dice.value = Array.from({ length: 4 }, () =>
-        Math.floor(Math.random() * 6) + 1
-    );
+    dice.value = Array.from({ length: 4 }, () => Math.floor(Math.random() * 6) + 1);
     message.value = '';
     userInput.value = '';
 
@@ -261,7 +260,17 @@ function resetGame() {
                 </div>
 
                 <!-- Question Answer Container -->
-                <div class="bg-white rounded-xl shadow-2xl p-6 transition-all duration-300 flex flex-col items-center">
+                <div class="bg-white rounded-xl shadow-2xl p-6 transition-all duration-300 flex flex-col items-center relative"
+                    :class="{ 'opacity-50': !bowlingComplete }">
+                    <div v-if="!bowlingComplete" class="absolute inset-0 bg-gray-100 bg-opacity-75 rounded-xl flex items-center justify-center z-10">
+                        <div class="text-center p-4">
+                            <div class="text-4xl mb-2">🔒</div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-2">MCQ Questions Locked</h3>
+                            <p class="text-gray-600">Complete the bowling game to unlock MCQ questions</p>
+                            <p class="text-sm text-gray-500 mt-2">Progress: {{ usedTargets }}/10 numbers cleared</p>
+                        </div>
+                    </div>
+                    
                     <h2 class="text-2xl font-semibold text-indigo-700 mb-6 flex items-center gap-2">
                         ❓ MCQ Questions
                     </h2>
@@ -280,8 +289,11 @@ function resetGame() {
                                     class="flex items-center">
                                     <input type="radio" :id="'option' + index" :name="'question' + currentQuestionIndex"
                                         :value="index" v-model="selectedAnswer" 
-                                        class="mr-3 text-indigo-600 focus:ring-indigo-500">
-                                    <label :for="'option' + index" class="text-gray-700 cursor-pointer hover:text-indigo-600">
+                                        :disabled="!bowlingComplete"
+                                        class="mr-3 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50">
+                                    <label :for="'option' + index" :class="[
+                                        bowlingComplete ? 'text-gray-700 cursor-pointer hover:text-indigo-600' : 'text-gray-400 cursor-not-allowed'
+                                    ]">
                                         {{ option }}
                                     </label>
                                 </div>
@@ -289,7 +301,7 @@ function resetGame() {
                         </div>
 
                         <!-- Submit Answer Button -->
-                        <button @click="submitAnswer" :disabled="selectedAnswer === null"
+                        <button @click="submitAnswer" :disabled="selectedAnswer === null || !bowlingComplete"
                             class="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md shadow transition-colors">
                             Submit Answer
                         </button>
@@ -305,14 +317,17 @@ function resetGame() {
                         <h3 class="text-lg font-semibold text-blue-800 mb-2">Need Help?</h3>
                         <p class="text-blue-700 mb-4">Find answers in our e-library</p>
                         <!-- E-Library Button -->
-                        <button @click="goToELibrary"
-                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md shadow flex items-center justify-center gap-2 transition-colors">
+                        <button @click="goToELibrary" :disabled="!bowlingComplete"
+                            :class="[
+                                bowlingComplete 
+                                    ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer' 
+                                    : 'bg-gray-400 cursor-not-allowed'
+                            ]"
+                            class="w-full text-white font-medium py-3 px-4 rounded-md shadow flex items-center justify-center gap-2 transition-colors">
                             <span>Go to E-Library</span>
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                             </svg>
-                            <!-- <a href="http://engage-dev1.comprodls.com/" target="_blank" rel="noopener noreferrer">
-                            </a> -->
                         </button>
                     </div>
 
