@@ -149,7 +149,7 @@ app.get('/api/submit/data', async (req, res) => {
     }
 });
 
-app.post('/api/submit/daily/tasks', async (req, res) => {
+app.post('/api/submit/daily-tasks', async (req, res) => {
     const response = req.body;
     console.log(response);
     res.status(200).json({ message: 'Daily tasks submitted successfully', ok: true });

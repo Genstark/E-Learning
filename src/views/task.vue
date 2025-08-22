@@ -19,11 +19,11 @@ const startTime = ref(null);
 const elapsedTime = ref(0);
 let timerInterval = null;
 const totalGameTime = ref(0);
-
-
+const gameStarted = ref(false);
 
 const usedTargets = computed(() => targetNumbers.value.filter(n => n.disabled).length);
 const bowlingComplete = computed(() => usedTargets.value === 10);
+const bothGamesComplete = computed(() => bowlingComplete.value && currentQuestionIndex.value === questions.value.length - 1);
 
 // MCQ Questions functionality
 const questions = ref([
@@ -83,7 +83,7 @@ const currentQuestion = computed(() => {
     return questions.value[currentQuestionIndex.value];
 });
 
-function submitAnswer() {
+async function submitAnswer() {
     if (selectedAnswer.value === null) return;
 
     const isCorrect = selectedAnswer.value === currentQuestion.value.correctAnswer;
@@ -107,7 +107,7 @@ function submitAnswer() {
             selectedAnswer.value = null;
             answerFeedback.value = null;
         } else {
-            if (timerInterval) {
+            if (bothGamesComplete.value && timerInterval) {
                 clearInterval(timerInterval);
                 timerInterval = null;
             }
@@ -115,6 +115,22 @@ function submitAnswer() {
             alert(`Quiz completed! Your score: ${score.value}/${questions.value.length}`);
         }
     }, 1000);
+
+    // send data to server
+    if (bothGamesComplete.value) {
+        const response = await fetch('/api/submit/daily-tasks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                score: score.value,
+                totalTime: totalGameTime.value
+            })
+        });
+        const data = await response.json();
+        console.log(data);
+    }
 }
 
 function goToELibrary() {
@@ -141,6 +157,7 @@ function startGame() {
             elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
         }, 1000);
     }
+    gameStarted.value = true;
     rollDice(); // Roll the dice immediately when the game starts
 }
 
@@ -178,12 +195,8 @@ async function validateExpression() {
     message.value = `Great! You cleared ${result}.`;
     userInput.value = '';
 
-    if (usedTargets.value === 10 && timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-        // Number bowling is finished, now the MCQ section will be enabled
-    }
-
+    // Number bowling is finished, now the MCQ section will be enabled
+    // Timer continues until both games are completed
 }
 
 </script>
@@ -227,12 +240,11 @@ async function validateExpression() {
 
                     <!-- Submit Button -->
                     <div class="flex space-x-4">
-                        <button @click="startGame" :disabled="bowlingComplete"
+                        <button @click="startGame" :disabled="gameStarted"
                             class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md shadow">
-                            ▶️ Start
+                            {{ gameStarted ? '🎲 Game Started' : '▶️ Start' }}
                         </button>
                     </div>
-
 
                     <!-- Message -->
                     <p class="text-sm text-gray-600 italic mb-2">{{ message }}</p>
@@ -246,8 +258,8 @@ async function validateExpression() {
                         <div class="text-center p-4">
                             <div class="text-4xl mb-2">🔒</div>
                             <h3 class="text-lg font-semibold text-gray-700 mb-2">MCQ Questions Locked</h3>
-                            <p class="text-gray-600">Complete the bowling game to unlock MCQ questions</p>
-                            <p class="text-sm text-gray-500 mt-2">Progress: {{ usedTargets }}/10 numbers cleared</p>
+                            <p class="text-gray-600 font-semibold">Complete the bowling game to unlock MCQ questions</p>
+                            <p class="text-sm text-gray-500 mt-2 font-semibold">Progress: {{ usedTargets }}/10 numbers cleared</p>
                         </div>
                     </div>
 
@@ -293,8 +305,7 @@ async function validateExpression() {
                     </div>
                     <!-- Timer and Bowling Progress -->
                     <div class="w-full flex justify-between text-sm text-gray-700 mt-4">
-                        <p>🕒 Time: {{ Math.floor(elapsedTime / 60) }}:{{ String(elapsedTime % 60).padStart(2, '0') }}
-                        </p>
+                        <p>🕒 Time: {{ Math.floor(elapsedTime / 60) }}:{{ String(elapsedTime % 60).padStart(2, '0') }}</p>
                         <p>✅ Cleared: {{ usedTargets }} / 10</p>
                     </div>
 
