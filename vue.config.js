@@ -13,5 +13,5 @@ module.exports = defineConfig({
       }),
     ],
   },
-  outputDir: 'client',
+  outputDir: 'server/dist',
 })

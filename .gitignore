@@ -24,8 +24,8 @@ pnpm-debug.log*
 *.sw?
 
 # build output
-/dist
-/client
+dist
+client
 
 # ignore file / folder
 test.js
