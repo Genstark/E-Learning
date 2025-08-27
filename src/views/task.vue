@@ -2,6 +2,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import Header from '@/components/Header.vue';
+import { evaluate } from "mathjs";
 // import { useRouter } from 'vue-router';
 
 // const router = useRouter();
@@ -78,6 +79,7 @@ const currentQuestionIndex = ref(0);
 const selectedAnswer = ref(null);
 const score = ref(0);
 const answerFeedback = ref(null);
+const totalSolvedNumber = ref(0);
 
 const currentQuestion = computed(() => {
     return questions.value[currentQuestionIndex.value];
@@ -118,14 +120,15 @@ async function submitAnswer() {
 
     // send data to server
     if (bothGamesComplete.value) {
-        const response = await fetch('/api/submit/daily-tasks', {
+        const response = await fetch('http://localhost:3000/api/submit/daily-tasks', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                score: score.value,
-                totalTime: totalGameTime.value
+                mcqscore: score.value,
+                totalNumberSolved: totalSolvedNumber.value,
+                totalTime: totalGameTime.value,
             })
         });
         const data = await response.json();
@@ -142,7 +145,6 @@ function rollDice() {
     dice.value = Array.from({ length: 4 }, () => Math.floor(Math.random() * 6) + 1);
     message.value = '';
     userInput.value = '';
-
     animatingDice.value = true;
     setTimeout(() => {
         animatingDice.value = false;
@@ -150,7 +152,6 @@ function rollDice() {
 }
 
 function startGame() {
-
     if (!startTime.value) {
         startTime.value = Date.now();
         timerInterval = setInterval(() => {
@@ -164,11 +165,11 @@ function startGame() {
 async function validateExpression() {
     let result;
     try {
-        if (!/^[\d\s+\-*/().]+$/.test(userInput.value)) {
+        if (!/^[0-9+\-*/().\s]+$/.test(userInput.value)) {
             throw new Error('Invalid characters used.');
         }
-        result = eval(userInput.value);
-        result = Math.round(result * 1000) / 1000;
+        result = evaluate(userInput.value);
+        // result = Math.round(result * 1000) / 1000;
     } catch (err) {
         message.value = 'Invalid expression.';
         return;
@@ -180,7 +181,7 @@ async function validateExpression() {
         return;
     }
 
-    const usedNumbers = userInput.value.match(/\d+/g)?.map(Number) || [];
+    const usedNumbers = userInput.value.match(/\d+/g)?.map(Number) || []; // Extract numbers from the expression
     const diceCopy = [...dice.value];
     for (const num of usedNumbers) {
         const i = diceCopy.indexOf(num);
@@ -190,13 +191,14 @@ async function validateExpression() {
         }
         diceCopy.splice(i, 1);
     }
-
+    totalSolvedNumber.value += 1;
     matchedTarget.disabled = true;
     message.value = `Great! You cleared ${result}.`;
     userInput.value = '';
+}
 
-    // Number bowling is finished, now the MCQ section will be enabled
-    // Timer continues until both games are completed
+function endGame(){
+    targetNumbers.value.forEach(n => n.disabled = true);
 }
 
 </script>
@@ -208,7 +210,7 @@ async function validateExpression() {
             <div class="max-w-6xl mx-auto grid grid-cols-1 gap-8">
 
                 <!-- Number Bowling Container -->
-                <div class="bg-white rounded-xl shadow-2xl p-6 transition-all duration-300 flex flex-col items-center">
+                <div class="bg-white rounded-xl shadow-2xl p-6 transition-all duration-300 flex flex-col items-center" :class="{ 'opacity-50': bowlingComplete }">
                     <h2 class="text-2xl font-semibold text-indigo-700 mb-6 flex items-center gap-2">
                         🎲 Number Bowling
                     </h2>
@@ -234,8 +236,8 @@ async function validateExpression() {
                     </div>
 
                     <!-- Input -->
-                    <input type="text" v-model="userInput" placeholder="e.g. (6+6)/3" @keyup.enter="validateExpression"
-                        :disabled="bowlingComplete"
+                    <input type="text" v-model="userInput" placeholder="e.g. (6+6)/3"
+                        @keyup.enter.prevent="validateExpression" :disabled="bowlingComplete"
                         class="w-full px-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-purple-400 text-center text-base mb-4 shadow-sm disabled:opacity-50" />
 
                     <!-- Submit Button -->
@@ -243,6 +245,10 @@ async function validateExpression() {
                         <button @click="startGame" :disabled="gameStarted"
                             class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md shadow">
                             {{ gameStarted ? '🎲 Game Started' : '▶️ Start' }}
+                        </button>
+                        <button @click="endGame" :disabled="!gameStarted" :class="{'opacity-50': !gameStarted}"
+                            class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md shadow">
+                            ⏹️ End Game
                         </button>
                     </div>
 
@@ -259,7 +265,8 @@ async function validateExpression() {
                             <div class="text-4xl mb-2">🔒</div>
                             <h3 class="text-lg font-semibold text-gray-700 mb-2">MCQ Questions Locked</h3>
                             <p class="text-gray-600 font-semibold">Complete the bowling game to unlock MCQ questions</p>
-                            <p class="text-sm text-gray-500 mt-2 font-semibold">Progress: {{ usedTargets }}/10 numbers cleared</p>
+                            <p class="text-sm text-gray-500 mt-2 font-semibold">Progress: {{ usedTargets }}/10 numbers
+                                cleared</p>
                         </div>
                     </div>
 
@@ -305,7 +312,8 @@ async function validateExpression() {
                     </div>
                     <!-- Timer and Bowling Progress -->
                     <div class="w-full flex justify-between text-sm text-gray-700 mt-4">
-                        <p>🕒 Time: {{ Math.floor(elapsedTime / 60) }}:{{ String(elapsedTime % 60).padStart(2, '0') }}</p>
+                        <p>🕒 Time: {{ Math.floor(elapsedTime / 60) }}:{{ String(elapsedTime % 60).padStart(2, '0') }}
+                        </p>
                         <p>✅ Cleared: {{ usedTargets }} / 10</p>
                     </div>
 
@@ -337,7 +345,7 @@ async function validateExpression() {
                         </p>
                         <p v-if="totalGameTime > 0" class="text-sm font-semibold text-indigo-700 mt-2">
                             Total Game Time: {{ Math.floor(totalGameTime / 60) }}:{{ String(totalGameTime %
-                            60).padStart(2, '0') }}
+                                60).padStart(2, '0') }}
                         </p>
                     </div>
                 </div>

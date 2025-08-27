@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
 const { generateSecretKey } = require('./utils/generateSecreteKey');
 const path = require('path');
+const ngrok = require('@ngrok/ngrok');
 require('dotenv').config();
 
 const app = express();
@@ -162,3 +163,9 @@ app.get(/.*/, (req, res) => {
 app.listen(process.env.PORT || 3000, () => {
     console.log(`Server is running on port http://localhost:${process.env.PORT || 3000}`);
 });
+
+const canRunNgrok = false; // Set to true if you want to run ngrok
+if (canRunNgrok) {
+    ngrok.connect({ addr: process.env.PORT || 3000, authtoken: process.env.NGROK })
+        .then(listener => console.log(`Ingress established at: ${listener.url()}`));
+}
