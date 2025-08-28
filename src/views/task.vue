@@ -1,11 +1,11 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import Header from '@/components/Header.vue';
 import { evaluate } from "mathjs";
-// import { useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 
-// const router = useRouter();
+const router = useRouter();
 
 const targetNumbers = ref(
     Array.from({ length: 10 }, (_, i) => ({ value: i + 1, disabled: false }))
@@ -20,11 +20,19 @@ const startTime = ref(null);
 const elapsedTime = ref(0);
 let timerInterval = null;
 const totalGameTime = ref(0);
+const gameFinished = ref(false);
 const gameStarted = ref(false);
 
 const usedTargets = computed(() => targetNumbers.value.filter(n => n.disabled).length);
 const bowlingComplete = computed(() => usedTargets.value === 10);
 const bothGamesComplete = computed(() => bowlingComplete.value && currentQuestionIndex.value === questions.value.length - 1);
+
+watch(elapsedTime, (newVal) => {
+    if (!gameFinished.value) {
+        totalGameTime.value = newVal;
+    }
+});
+
 
 // MCQ Questions functionality
 const questions = ref([
@@ -38,41 +46,41 @@ const questions = ref([
         options: ["Venus", "Mars", "Jupiter", "Saturn"],
         correctAnswer: 1
     },
-    {
-        question: "What is 2 + 2?",
-        options: ["3", "4", "5", "6"],
-        correctAnswer: 1
-    },
-    {
-        question: "Who wrote 'To Kill a Mockingbird'?",
-        options: ["Harper Lee", "Mark Twain", "Ernest Hemingway", "F. Scott Fitzgerald"],
-        correctAnswer: 0
-    },
-    {
-        question: "What is the largest mammal?",
-        options: ["Elephant", "Blue Whale", "Giraffe", "Great White Shark"],
-        correctAnswer: 1
-    },
-    {
-        question: "What is the boiling point of water?",
-        options: ["90°C", "100°C", "110°C", "120°C"],
-        correctAnswer: 1
-    },
-    {
-        question: "Who painted the Mona Lisa?",
-        options: ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Claude Monet"],
-        correctAnswer: 2
-    },
-    {
-        question: "What is the chemical symbol for gold?",
-        options: ["Au", "Ag", "Pb", "Fe"],
-        correctAnswer: 0
-    },
-    {
-        question: "What is the largest ocean on Earth?",
-        options: ["Atlantic Ocean", "Indian Ocean", "Arctic Ocean", "Pacific Ocean"],
-        correctAnswer: 3
-    }
+    // {
+    //     question: "What is 2 + 2?",
+    //     options: ["3", "4", "5", "6"],
+    //     correctAnswer: 1
+    // },
+    // {
+    //     question: "Who wrote 'To Kill a Mockingbird'?",
+    //     options: ["Harper Lee", "Mark Twain", "Ernest Hemingway", "F. Scott Fitzgerald"],
+    //     correctAnswer: 0
+    // },
+    // {
+    //     question: "What is the largest mammal?",
+    //     options: ["Elephant", "Blue Whale", "Giraffe", "Great White Shark"],
+    //     correctAnswer: 1
+    // },
+    // {
+    //     question: "What is the boiling point of water?",
+    //     options: ["90°C", "100°C", "110°C", "120°C"],
+    //     correctAnswer: 1
+    // },
+    // {
+    //     question: "Who painted the Mona Lisa?",
+    //     options: ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Claude Monet"],
+    //     correctAnswer: 2
+    // },
+    // {
+    //     question: "What is the chemical symbol for gold?",
+    //     options: ["Au", "Ag", "Pb", "Fe"],
+    //     correctAnswer: 0
+    // },
+    // {
+    //     question: "What is the largest ocean on Earth?",
+    //     options: ["Atlantic Ocean", "Indian Ocean", "Arctic Ocean", "Pacific Ocean"],
+    //     correctAnswer: 3
+    // },
 ]);
 
 const currentQuestionIndex = ref(0);
@@ -84,6 +92,19 @@ const totalSolvedNumber = ref(0);
 const currentQuestion = computed(() => {
     return questions.value[currentQuestionIndex.value];
 });
+
+const formatTime = (timeInSeconds) => {
+    const hours = Math.floor(timeInSeconds / 3600);
+    const minutes = Math.floor((timeInSeconds % 3600) / 60);
+    const seconds = timeInSeconds % 60;
+
+    if (hours > 0) {
+        return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    } else {
+        return `${minutes}:${String(seconds).padStart(2, '0')}`;
+    }
+};
+
 
 async function submitAnswer() {
     if (selectedAnswer.value === null) return;
@@ -113,45 +134,55 @@ async function submitAnswer() {
                 clearInterval(timerInterval);
                 timerInterval = null;
             }
-            totalGameTime.value = elapsedTime.value; // Store the total time
-            alert(`Quiz completed! Your score: ${score.value}/${questions.value.length}`);
+
+            // Freeze final total time
+            totalGameTime.value = elapsedTime.value;
+            gameFinished.value = true;
+
+            alert(`Quiz completed! Your score: ${score.value}/${questions.value.length}\nNumber of questions solved: ${totalSolvedNumber.value}\nTotal time: ${formatTime(totalGameTime.value)}`);
         }
     }, 1000);
 
-    // send data to server
+    // send to server
     if (bothGamesComplete.value) {
         const response = await fetch('http://localhost:3000/api/submit/daily-tasks', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 mcqscore: score.value,
                 totalNumberSolved: totalSolvedNumber.value,
-                totalTime: totalGameTime.value,
+                totalInSeconds: totalGameTime.value,
+                totalTime: formatTime(totalGameTime.value),
             })
         });
+
         const data = await response.json();
-        console.log(data);
+        if (data.ok) {
+            alert('Daily tasks submitted successfully!');
+            router.push('/');
+        } else {
+            alert('Failed to submit daily tasks.');
+        }
     }
 }
+
 
 function goToELibrary() {
     // router.push('https://engage-dev1.comprodls.com/', '_blank');
     window.open('https://engage-dev1.comprodls.com/', '_blank');
 }
 
-function rollDice() {
-    dice.value = Array.from({ length: 4 }, () => Math.floor(Math.random() * 6) + 1);
-    message.value = '';
-    userInput.value = '';
-    animatingDice.value = true;
-    setTimeout(() => {
-        animatingDice.value = false;
-    }, 500);
-}
+// function rollDice() {
+//     dice.value = Array.from({ length: 4 }, () => Math.floor(Math.random() * 6) + 1);
+//     message.value = '';
+//     userInput.value = '';
+//     animatingDice.value = true;
+//     setTimeout(() => {
+//         animatingDice.value = false;
+//     }, 500);
+// }
 
-function startGame() {
+async function startGame() {
     if (!startTime.value) {
         startTime.value = Date.now();
         timerInterval = setInterval(() => {
@@ -159,7 +190,11 @@ function startGame() {
         }, 1000);
     }
     gameStarted.value = true;
-    rollDice(); // Roll the dice immediately when the game starts
+    // rollDice(); // Roll the dice immediately when the game starts
+    const diceresponse = await fetch('http://localhost:3000/api/roll-dice');
+    const data = await diceresponse.json();
+    console.log(data);
+    dice.value = data.result;
 }
 
 async function validateExpression() {
@@ -197,7 +232,8 @@ async function validateExpression() {
     userInput.value = '';
 }
 
-function endGame(){
+function endGame() {
+    // Mark all targets disabled so bowling is finished
     targetNumbers.value.forEach(n => n.disabled = true);
 }
 
@@ -210,7 +246,8 @@ function endGame(){
             <div class="max-w-6xl mx-auto grid grid-cols-1 gap-8">
 
                 <!-- Number Bowling Container -->
-                <div class="bg-white rounded-xl shadow-2xl p-6 transition-all duration-300 flex flex-col items-center" :class="{ 'opacity-50': bowlingComplete }">
+                <div class="bg-white rounded-xl shadow-2xl p-6 transition-all duration-300 flex flex-col items-center"
+                    :class="{ 'opacity-50': bowlingComplete }">
                     <h2 class="text-2xl font-semibold text-indigo-700 mb-6 flex items-center gap-2">
                         🎲 Number Bowling
                     </h2>
@@ -246,7 +283,7 @@ function endGame(){
                             class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md shadow">
                             {{ gameStarted ? '🎲 Game Started' : '▶️ Start' }}
                         </button>
-                        <button @click="endGame" :disabled="!gameStarted" :class="{'opacity-50': !gameStarted}"
+                        <button @click="endGame" :disabled="!gameStarted" :class="{ 'opacity-50': !gameStarted }"
                             class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md shadow">
                             ⏹️ End Game
                         </button>
@@ -312,9 +349,8 @@ function endGame(){
                     </div>
                     <!-- Timer and Bowling Progress -->
                     <div class="w-full flex justify-between text-sm text-gray-700 mt-4">
-                        <p>🕒 Time: {{ Math.floor(elapsedTime / 60) }}:{{ String(elapsedTime % 60).padStart(2, '0') }}
-                        </p>
-                        <p>✅ Cleared: {{ usedTargets }} / 10</p>
+                        <p>🕒 Time: {{ formatTime(elapsedTime) }}</p>
+                        <p>✅ Cleared: {{ totalSolvedNumber }} / 10</p>
                     </div>
 
 
@@ -341,7 +377,7 @@ function endGame(){
                     <!-- Score and Total Time -->
                     <div class="w-full mt-4 text-center">
                         <p class="text-sm text-gray-600">
-                            Score: {{ score }} / {{ questions.length }}
+                            MCQ Score: {{ score }} / {{ questions.length }}
                         </p>
                         <p v-if="totalGameTime > 0" class="text-sm font-semibold text-indigo-700 mt-2">
                             Total Game Time: {{ Math.floor(totalGameTime / 60) }}:{{ String(totalGameTime %

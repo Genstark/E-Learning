@@ -25,6 +25,7 @@
     "jsonwebtoken": "^9.0.2",
     "mathjs": "^14.6.0",
     "mongodb": "^6.18.0",
+    "node-cron": "^4.2.1",
     "path": "^0.12.7",
     "postcss": "^8",
     "tailwindcss": "^3",
