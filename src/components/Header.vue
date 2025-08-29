@@ -51,7 +51,7 @@ function usePastSearch(term) {
                 <div class="flex items-center space-x-4 sm:space-x-6">
                     <a href="/" class="text-2xl sm:text-3xl font-bold text-primary-600 whitespace-nowrap inline-block"
                         id="heading">
-                        E-L
+                        <!-- E-L -->
                     </a>
 
                     <!-- Nav (hidden on mobile) -->

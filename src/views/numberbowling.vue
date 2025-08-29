@@ -3,6 +3,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import Header from '@/components/Header.vue';
+import { evaluate } from 'mathjs';
 
 const targetNumbers = ref(
     Array.from({ length: 10 }, (_, i) => ({ value: i + 1, disabled: false }))
@@ -68,8 +69,8 @@ async function validateExpression() {
         if (!/^[\d\s+\-*/().]+$/.test(userInput.value)) {
             throw new Error('Invalid characters used.');
         }
-        result = eval(userInput.value);
-        result = Math.round(result * 1000) / 1000;
+        result = evaluate(userInput.value);
+        // result = Math.round(result * 1000) / 1000;
     } catch (err) {
         message.value = 'Invalid expression.';
         return;
