@@ -33,8 +33,7 @@ watch(elapsedTime, (newVal) => {
     }
 });
 
-
-// MCQ Questions functionality
+// MCQ Questions functionality - Default questions
 const questions = ref([
     {
         question: "What is the capital of France?",
@@ -45,42 +44,7 @@ const questions = ref([
         question: "Which planet is known as the Red Planet?",
         options: ["Venus", "Mars", "Jupiter", "Saturn"],
         correctAnswer: 1
-    },
-    // {
-    //     question: "What is 2 + 2?",
-    //     options: ["3", "4", "5", "6"],
-    //     correctAnswer: 1
-    // },
-    // {
-    //     question: "Who wrote 'To Kill a Mockingbird'?",
-    //     options: ["Harper Lee", "Mark Twain", "Ernest Hemingway", "F. Scott Fitzgerald"],
-    //     correctAnswer: 0
-    // },
-    // {
-    //     question: "What is the largest mammal?",
-    //     options: ["Elephant", "Blue Whale", "Giraffe", "Great White Shark"],
-    //     correctAnswer: 1
-    // },
-    // {
-    //     question: "What is the boiling point of water?",
-    //     options: ["90°C", "100°C", "110°C", "120°C"],
-    //     correctAnswer: 1
-    // },
-    // {
-    //     question: "Who painted the Mona Lisa?",
-    //     options: ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Claude Monet"],
-    //     correctAnswer: 2
-    // },
-    // {
-    //     question: "What is the chemical symbol for gold?",
-    //     options: ["Au", "Ag", "Pb", "Fe"],
-    //     correctAnswer: 0
-    // },
-    // {
-    //     question: "What is the largest ocean on Earth?",
-    //     options: ["Atlantic Ocean", "Indian Ocean", "Arctic Ocean", "Pacific Ocean"],
-    //     correctAnswer: 3
-    // },
+    }
 ]);
 
 const currentQuestionIndex = ref(0);
@@ -89,8 +53,16 @@ const score = ref(0);
 const answerFeedback = ref(null);
 const totalSolvedNumber = ref(0);
 
+// Safe computed properties
 const currentQuestion = computed(() => {
-    return questions.value[currentQuestionIndex.value];
+    if (Array.isArray(questions.value) && questions.value[currentQuestionIndex.value]) {
+        return questions.value[currentQuestionIndex.value];
+    }
+    return null;
+});
+
+const questionsCount = computed(() => {
+    return Array.isArray(questions.value) ? questions.value.length : 0;
 });
 
 const formatTime = (timeInSeconds) => {
@@ -105,6 +77,95 @@ const formatTime = (timeInSeconds) => {
     }
 };
 
+// Enhanced startGame function with detailed logging
+async function startGame() {
+    // Timer start karo
+    if (!startTime.value) {
+        startTime.value = Date.now();
+        timerInterval = setInterval(() => {
+            elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
+        }, 1000);
+    }
+    gameStarted.value = true;
+    
+    // API se data fetch karo
+    try {
+        console.log('🔄 Calling API: http://localhost:3000/api/roll-dice');
+        const response = await fetch('http://localhost:3000/api/roll-dice');
+        
+        console.log('📊 Response Status:', response.status);
+        console.log('📊 Response OK:', response.ok);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('📦 Full API Response:', data);
+        console.log('🎲 Dice in response:', data.result);
+        console.log('❓ Questions in response:', data.questions.questions);
+        console.log('🔍 Questions type:', typeof data.questions);
+        console.log('📏 Questions length:', data.questions ? data.questions.length : 'undefined');
+        console.log('✅ Is questions array?', Array.isArray(data.questions));
+        
+        // Dice handle karo
+        if (data && data.result && Array.isArray(data.result)) {
+            dice.value = [...data.result];
+            console.log('✅ Dice loaded from API:', dice.value);
+            message.value = 'API data loaded - Dice updated';
+        } else {
+            console.log('❌ Invalid dice data from API');
+            dice.value = [1, 2, 3, 4];
+            message.value = 'Using default dice';
+        }
+        
+        // Questions handle karo
+        if (data && data.questions) {
+            let parsedQuestions = null;
+            // Agar string hai toh parse karo
+            if (typeof data.questions === 'string') {
+                try {
+                    const parsed = JSON.parse(data.questions);
+                    // Agar parsed object mein questions property hai toh use karo
+                    if (Array.isArray(parsed.questions)) {
+                        parsedQuestions = parsed.questions;
+                    } else if (Array.isArray(parsed)) {
+                        parsedQuestions = parsed;
+                    }
+                    console.log('✅ Parsed questions from string:', parsedQuestions);
+                } catch (parseError) {
+                    console.error('❌ Failed to parse questions string:', parseError);
+                    console.log('❌ Original string:', data.questions);
+                }
+            } else if (Array.isArray(data.questions)) {
+                parsedQuestions = data.questions;
+                console.log('✅ Questions already array:', parsedQuestions);
+            }
+
+            if (parsedQuestions && Array.isArray(parsedQuestions) && parsedQuestions.length > 0) {
+                questions.value = [...parsedQuestions];
+                currentQuestionIndex.value = 0;
+                selectedAnswer.value = null;
+                answerFeedback.value = null;
+                score.value = 0;
+                console.log('✅ Questions loaded! Count:', questions.value.length);
+                console.log('✅ First question:', questions.value[0]);
+                message.value = `API questions loaded: ${questions.value.length} questions`;
+            } else {
+                console.log('❌ Parsed questions invalid');
+                message.value = 'API questions parsing failed - using defaults';
+            }
+        } else {
+            console.log('❌ No questions in API response');
+            message.value = 'No questions from API - using defaults';
+        }
+        
+    } catch (error) {
+        console.error('🚨 API Error:', error);
+        dice.value = [1, 2, 3, 4];
+        message.value = `API Error: ${error.message}`;
+    }
+}
 
 async function submitAnswer() {
     if (selectedAnswer.value === null) return;
@@ -125,7 +186,7 @@ async function submitAnswer() {
     }
 
     setTimeout(() => {
-        if (currentQuestionIndex.value < questions.value.length - 1) {
+        if (currentQuestionIndex.value < questionsCount.value - 1) {
             currentQuestionIndex.value++;
             selectedAnswer.value = null;
             answerFeedback.value = null;
@@ -135,66 +196,43 @@ async function submitAnswer() {
                 timerInterval = null;
             }
 
-            // Freeze final total time
             totalGameTime.value = elapsedTime.value;
             gameFinished.value = true;
 
-            alert(`Quiz completed! Your score: ${score.value}/${questions.value.length}\nNumber of questions solved: ${totalSolvedNumber.value}\nTotal time: ${formatTime(totalGameTime.value)}`);
+            alert(`Quiz completed! Your score: ${score.value}/${questionsCount.value}\nNumber of questions solved: ${totalSolvedNumber.value}\nTotal time: ${formatTime(totalGameTime.value)}`);
         }
     }, 1000);
 
     // send to server
     if (bothGamesComplete.value) {
-        const response = await fetch('http://localhost:3000/api/submit/daily-tasks', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                mcqscore: score.value,
-                totalNumberSolved: totalSolvedNumber.value,
-                totalInSeconds: totalGameTime.value,
-                totalTime: formatTime(totalGameTime.value),
-            })
-        });
+        try {
+            const response = await fetch('http://localhost:3000/api/submit/daily-tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    mcqscore: score.value,
+                    totalNumberSolved: totalSolvedNumber.value,
+                    totalInSeconds: totalGameTime.value,
+                    totalTime: formatTime(totalGameTime.value),
+                })
+            });
 
-        const data = await response.json();
-        if (data.ok) {
-            alert('Daily tasks submitted successfully!');
-            router.push('/');
-        } else {
+            const data = await response.json();
+            if (data.ok) {
+                alert('Daily tasks submitted successfully!');
+                router.push('/');
+            } else {
+                alert('Failed to submit daily tasks.');
+            }
+        } catch (error) {
+            console.error('Submit error:', error);
             alert('Failed to submit daily tasks.');
         }
     }
 }
 
-
 function goToELibrary() {
-    // router.push('https://engage-dev1.comprodls.com/', '_blank');
     window.open('https://engage-dev1.comprodls.com/', '_blank');
-}
-
-// function rollDice() {
-//     dice.value = Array.from({ length: 4 }, () => Math.floor(Math.random() * 6) + 1);
-//     message.value = '';
-//     userInput.value = '';
-//     animatingDice.value = true;
-//     setTimeout(() => {
-//         animatingDice.value = false;
-//     }, 500);
-// }
-
-async function startGame() {
-    if (!startTime.value) {
-        startTime.value = Date.now();
-        timerInterval = setInterval(() => {
-            elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
-        }, 1000);
-    }
-    gameStarted.value = true;
-    // rollDice(); // Roll the dice immediately when the game starts
-    const diceresponse = await fetch('http://localhost:3000/api/roll-dice');
-    const data = await diceresponse.json();
-    console.log(data);
-    dice.value = data.result;
 }
 
 async function validateExpression() {
@@ -204,7 +242,6 @@ async function validateExpression() {
             throw new Error('Invalid characters used.');
         }
         result = evaluate(userInput.value);
-        // result = Math.round(result * 1000) / 1000;
     } catch (err) {
         message.value = 'Invalid expression.';
         return;
@@ -216,7 +253,7 @@ async function validateExpression() {
         return;
     }
 
-    const usedNumbers = userInput.value.match(/\d+/g)?.map(Number) || []; // Extract numbers from the expression
+    const usedNumbers = userInput.value.match(/\d+/g)?.map(Number) || [];
     const diceCopy = [...dice.value];
     for (const num of usedNumbers) {
         const i = diceCopy.indexOf(num);
@@ -233,10 +270,8 @@ async function validateExpression() {
 }
 
 function endGame() {
-    // Mark all targets disabled so bowling is finished
     targetNumbers.value.forEach(n => n.disabled = true);
 }
-
 </script>
 
 <template>
@@ -263,7 +298,7 @@ function endGame() {
                     <!-- Targets -->
                     <div class="grid grid-cols-5 gap-3 mb-6">
                         <div v-for="num in targetNumbers" :key="num.value" :class="[
-                            'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all',
+                            'w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold transition-all',
                             num.disabled
                                 ? 'bg-gray-300 text-gray-500 line-through scale-95 animate-cleared-target'
                                 : 'bg-purple-100 text-purple-800 border border-purple-400 hover:bg-purple-200 hover:scale-105'
@@ -315,7 +350,7 @@ function endGame() {
                     <div v-if="currentQuestion" class="w-full mb-6">
                         <div class="bg-gray-50 rounded-lg p-4 mb-4">
                             <h3 class="text-lg font-semibold text-gray-800 mb-3">
-                                Question {{ currentQuestionIndex + 1 }} of {{ questions.length }}
+                                Question {{ currentQuestionIndex + 1 }} of {{ questionsCount }}
                             </h3>
                             <p class="text-gray-700 mb-4">{{ currentQuestion.question }}</p>
 
@@ -347,12 +382,12 @@ function endGame() {
                             {{ answerFeedback.message }}
                         </div>
                     </div>
+                    
                     <!-- Timer and Bowling Progress -->
                     <div class="w-full flex justify-between text-sm text-gray-700 mt-4">
                         <p>🕒 Time: {{ formatTime(elapsedTime) }}</p>
                         <p>✅ Cleared: {{ totalSolvedNumber }} / 10</p>
                     </div>
-
 
                     <!-- Navigation to E-Library -->
                     <div class="w-full mt-6 p-4 bg-blue-50 rounded-lg">
@@ -377,7 +412,7 @@ function endGame() {
                     <!-- Score and Total Time -->
                     <div class="w-full mt-4 text-center">
                         <p class="text-sm text-gray-600">
-                            MCQ Score: {{ score }} / {{ questions.length }}
+                            MCQ Score: {{ score }} / {{ questionsCount }}
                         </p>
                         <p v-if="totalGameTime > 0" class="text-sm font-semibold text-indigo-700 mt-2">
                             Total Game Time: {{ Math.floor(totalGameTime / 60) }}:{{ String(totalGameTime %

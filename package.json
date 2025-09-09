@@ -13,6 +13,7 @@
     "start": "node server/index.js"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@ngrok/ngrok": "^1.5.2",
     "autoprefixer": "^10",
     "bcrypt": "^6.0.0",

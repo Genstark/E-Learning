@@ -9,10 +9,12 @@ const { rollDice } = require('./utils/randomRollDice');
 const path = require('path');
 const ngrok = require('@ngrok/ngrok');
 const cron = require('node-cron');
+const googleAPI = require('./utils/googleAPI');
 require('dotenv').config();
 
 const app = express();
 let rolldicenumber = [];
+let questions = [];
 
 // Middleware to parse JSON requests
 app.use(cors({
@@ -24,7 +26,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
-app.use(express.static(path.join(__dirname, 'dist'), { 'extensions': ['html', 'css', 'js'] }));
+app.use(express.static(path.join(__dirname, '../dist'), { 'extensions': ['html', 'css', 'js'] }));
 
 function authenticateToken(req, res, next) {
     const token = req.header('Authorization').replace('Bearer ', '');
@@ -95,7 +97,7 @@ app.post('/api/login', async (req, res) => {
                 const isUserEmail = await bcrypt.compare(email, allUsers[i].email);
                 const isPasswordValid = await bcrypt.compare(password, allUsers[i].password);
                 if (isPasswordValid && isUserEmail) {
-                    const token = jwt.sign({ email: allUsers[i].email }, generateSecretKey(), { expiresIn: '3d' });
+                    const token = jwt.sign({ email: allUsers[i].email }, generateSecretKey(), { expiresIn: '23h' });
                     return res.status(200).json({ message: 'Login successful', ok: true, token });
                 }
             }
@@ -106,9 +108,10 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-app.get('/api/roll-dice', (req, res) => {
+app.get('/api/roll-dice', async (req, res) => {
     try {
-        res.status(200).json({ result: rolldicenumber });
+        // console.log(questions);
+        res.status(200).json({ result: rolldicenumber, 'questions': questions });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
     }
@@ -206,24 +209,30 @@ app.post('/api/submit/daily-tasks', async (req, res) => {
     } catch (error) {
         console.error("Error submitting daily tasks:", error);
     }
-    console.log(response);
+    console.log(response._id);
     res.status(200).json({ message: 'Daily tasks submitted successfully', ok: true });
 });
 
+// home page route
 app.get(/.*/, (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });
 
 let job = cron.schedule("* * * * * *", async () => {
-    rolldicenumber = await rollDice();
-
+    if (rolldicenumber.length == 0 && questions.length == 0) {
+        console.log("Running initial fetch for dice and questions");
+        rolldicenumber = await rollDice();
+        questions = await googleAPI.generateText("generate most tough and tough questions scientific");
+        console.log('Questions and dice fetched');
+    }
     // Agar dice me number aa gaya (length > 0) to per minute schedule par switch kar do
-    if (rolldicenumber.length > 0) {
+    if (rolldicenumber.length > 0 && questions.length > 0) {
         job.stop(); // pehle job band karo
         job = cron.schedule("0 0 * * *", async () => {
             rolldicenumber = await rollDice();
+            questions = await googleAPI.generateText("generate most tough and tough questions scientific");
         });
-        console.log("✅ Switched to 24-hour schedule");
+        console.log("✅ Switched to 24-hour schedule for both dice and questions");
     }
 });
 
