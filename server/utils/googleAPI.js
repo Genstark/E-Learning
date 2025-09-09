@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // Load your API key securely
-const genAI = new GoogleGenerativeAI(process.env.GEMINI || "AIzaSyDAT0tnL3798cbmzHYQiKtbqVMtZM20fiQ");
+const genAI = new GoogleGenerativeAI(process.env.GEMINI);
 
 async function generateText(prompt) {
     try {

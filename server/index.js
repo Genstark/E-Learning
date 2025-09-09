@@ -64,13 +64,13 @@ app.post('/api/signup', async (req, res) => {
     if (!name || !email || !password) {
         return res.status(400).json({ error: 'All fields are required' });
     }
-    const hashedName = await bcrypt.hash(name, 10);
-    const hashedEmail = await bcrypt.hash(email, 10);
+    // const hashedName = await bcrypt.hash(name, 10);
+    // const hashedEmail = await bcrypt.hash(email, 10);
     const hashedPassword = await bcrypt.hash(password, 10);
     try {
         await client.db("E-Learning").collection("users").insertOne({
-            name: hashedName,
-            email: hashedEmail,
+            name,
+            email,
             password: hashedPassword
         });
         res.status(201).json({ message: 'User created successfully', ok: true });
@@ -149,10 +149,24 @@ app.get('/api/number-bowling/data', async (req, res) => {
     }
 });
 
-// testing api
+
+app.get('/api/daily-tasks/scoreboard', async (req, res) => {
+    try {
+        const scoreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
+        if(scoreboardData.length === 0) {
+            return res.status(404).json({ message: 'No scoreboard data found' });
+        }
+        const rankedData = rankPlayers(scoreboardData);
+        console.log(rankedData);
+        res.status(200).json(rankedData);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 function rankPlayers(players) {
     // Sort players
-    const sorted = [...players].sort((a, b) => {
+    return [...players].sort((a, b) => {
         const totalA = a.mcqscore + a.totalNumberSolved;
         const totalB = b.mcqscore + b.totalNumberSolved;
 
@@ -164,26 +178,6 @@ function rankPlayers(players) {
         // 2. If solved same → sort by time (asc, lower is better)
         return a.totalInSeconds - b.totalInSeconds;
     });
-
-    // Assign ranks (dense style: 1,1,2)
-    let rank = 1;
-    sorted[0].rank = rank;
-
-    for (let i = 1; i < sorted.length; i++) {
-        const prev = sorted[i - 1];
-        const curr = sorted[i];
-
-        const prevTotal = prev.mcqscore + prev.totalNumberSolved;
-        const currTotal = curr.mcqscore + curr.totalNumberSolved;
-
-        if (prevTotal === currTotal && prev.totalInSeconds === curr.totalInSeconds) {
-            curr.rank = prev.rank; // tie → same rank
-        } else {
-            curr.rank = ++rank;
-        }
-    }
-
-    return sorted;
 }
 
 app.get('/api/submit/data', async (req, res) => {
