@@ -62,7 +62,7 @@ async function handleSignup() {
             confirmPassword.value = '';
             router.push('/login');
         } else {
-            alert(`Signup failed: ${data.message || 'Unknown error'}`);
+            alert(`Signup failed: ${data.error || 'Unknown error'}`);
         }
     } catch (error) {
         alert('An error occurred while signing up. Please try again later.');
@@ -77,7 +77,7 @@ async function handleSignup() {
     <!-- Page Centering -->
     <div class="min-h-screen flex items-center justify-center bg-gray-100">
         <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-            <h2 class="text-2xl font-bold mb-6 text-center">Sign Up</h2>
+            <!-- <h2 class="text-2xl font-bold mb-6 text-center">Sign Up</h2> -->
             <div class="space-y-4">
                 <input 
                     type="text" 

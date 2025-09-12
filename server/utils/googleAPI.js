@@ -6,7 +6,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI);
 async function generateText(prompt) {
     try {
         const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash", // Use "gemini-2.5-flash" if available to you
+            model: "gemini-2.5-flash", // Use "gemini-2.5-flash" if available to you
         });
         const result = await model.generateContent({
             contents: [{
