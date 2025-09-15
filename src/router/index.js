@@ -1,19 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../views/index.vue';
-// import path from 'path';
 
 const routes = [
 	{
 		path: '/',
 		name: 'home',
-		component: HomeView,
-        children: [
-            {
-                path: '/:id ',
-                name: 'user-home',
-                component: HomeView
-            }
-        ]
+		component: HomeView
 	},
 	{
 		path: '/about',
@@ -33,27 +25,13 @@ const routes = [
 	{
 		path: '/number-bowling',
 		name: 'number-bowling',
-		component: () => import('../views/numberbowling.vue'),
-        children: [
-            {
-                path: '/:id/number-bowling',
-                name: 'number-bowling-id',
-                component: () => import('../views/numberbowling.vue')
-            }
-        ]
+		component: () => import('../views/numberbowling.vue')
 	},
 	{
 		path: '/task',
 		name: 'task',
-		component: () => import('../views/task.vue'),
-        children: [
-            {
-                path: '/:id/task',
-                name: 'task-id',
-                component: () => import('../views/task.vue')
-            }
-        ]
-	},
+		component: () => import('../views/task.vue')
+	}
 ];
 
 const router = createRouter({
@@ -61,20 +39,9 @@ const router = createRouter({
 	routes
 });
 
-
-// function getCookie(name) {
-//     const value = `; ${document.cookie}`;
-//     const parts = value.split(`; ${name}=`);
-//     if (parts.length === 2) return parts.pop().split(';').shift();
-//     return null;
-// }
-
 router.beforeEach(async (to, from, next) => {
     const token = localStorage.getItem('token');
-    // const token = getCookie('token');
-    // console.log('cookies', getCookie('token'));
-    console.log("Navigating to:", to.path);
-    console.log("Current token:", token);
+    console.log("Navigating to:", token);
 
     // Agar user login page par ja raha hai, guard skip karo
     if (to.path === '/login') {
@@ -101,7 +68,7 @@ router.beforeEach(async (to, from, next) => {
             credentials: 'include'
         });
 
-        if (response.status === 200 || response.status === 201) {
+        if (response.ok) {
             console.log("Token is valid, proceeding to");
             const data = await response.json();
             console.log("User data:", data.user);
@@ -111,7 +78,7 @@ router.beforeEach(async (to, from, next) => {
 
             // 🔹 LocalStorage se remove karo
             localStorage.removeItem('token');
-            localStorage.removeItem('user');
+
             // 🔹 Cookies se delete karo
             document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
@@ -134,5 +101,6 @@ router.beforeEach(async (to, from, next) => {
         }
     }
 });
+
 
 export default router;
