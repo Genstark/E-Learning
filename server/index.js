@@ -10,6 +10,7 @@ const path = require('path');
 const ngrok = require('@ngrok/ngrok');
 const cron = require('node-cron');
 const googleAPI = require('./utils/googleAPI');
+const { encrypt, decrypt } = require('./utils/Encryption');
 require('dotenv').config();
 
 const app = express();
@@ -64,7 +65,7 @@ client.connect().then(() => {
 app.get('/api/validate-token', authenticateToken, (req, res) => {
     console.log("Token is valid for user:", req.user);
     try {
-        if(!req.user) {
+        if (!req.user) {
             return res.status(401).json({ error: 'Invalid token', ok: false });
         }
         res.status(200).json({ message: 'Token is valid', ok: true, user: req.user });
@@ -88,14 +89,23 @@ app.post('/api/signup', async (req, res) => {
     }
 
     try {
-        const existingUser = await client.db("E-Learning").collection("users").findOne({ email });
-        const usernaemeExist = await client.db("E-Learning").collection("users").findOne({ name });
-        if (usernaemeExist) {
-            return res.status(409).json({ error: 'Username already in use', ok: false });
+        // const existingUser = await client.db("E-Learning").collection("users").findOne({ email });
+        // const usernaemeExist = await client.db("E-Learning").collection("users").findOne({ name });
+        const finduser = await client.db("E-Learning").collection("users").find().toArray();
+        for (let i = 0; i < finduser.length; i++) {
+            if (finduser[i].name === name) {
+                return res.status(409).json({ error: 'Username already in use', ok: false });
+            }
+            if (finduser[i].email === email) {
+                return res.status(409).json({ error: 'Email already in use', ok: false });
+            }
         }
-        if (existingUser) {
-            return res.status(409).json({ error: 'Email already in use', ok: false }); // Conflict
-        }
+        // if (usernaemeExist) {
+        //     return res.status(409).json({ error: 'Username already in use', ok: false });
+        // }
+        // if (existingUser) {
+        //     return res.status(409).json({ error: 'Email already in use', ok: false }); 
+        // }
     } catch (error) {
         console.error("Error checking existing user:", error);
         return res.status(500).json({ error: 'Internal server error' });
@@ -132,20 +142,11 @@ app.post('/api/login', async (req, res) => {
         for (let i = 0; i < allUsers.length; i++) {
             if (allUsers[i].email === email) {
                 if (await bcrypt.compare(password, allUsers[i].password)) {
-                    const token = jwt.sign({ email: allUsers[i].email }, SECRET_KEY, { expiresIn: '23h' });
+                    const token = jwt.sign({ email: allUsers[i].email, username: allUsers[i].name }, SECRET_KEY, { expiresIn: '23h' });
                     res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'Strict', maxAge: 23 * 60 * 60 * 1000 });
-                    return res.status(200).json({ message: 'Login successful', ok: true, token });
+                    return res.status(200).json({ message: 'Login successful', ok: true, token, user: allUsers[i].name });
                 }
             }
-            // if (await bcrypt.compare(email, allUsers[i].email)) {
-            //     const isUserEmail = await bcrypt.compare(email, allUsers[i].email);
-            //     const isPasswordValid = await bcrypt.compare(password, allUsers[i].password);
-            //     if (isPasswordValid && isUserEmail) {
-            //         const token = jwt.sign({ email: allUsers[i].email }, generateSecretKey(), { expiresIn: '23h' });
-            //         res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'Strict', maxAge: 23 * 60 * 60 * 1000 });
-            //         return res.status(200).json({ message: 'Login successful', ok: true, token });
-            //     }
-            // }
         }
         res.status(401).json({ error: 'Invalid email or password' });
     } catch (error) {
@@ -198,7 +199,7 @@ app.get('/api/number-bowling/data', async (req, res) => {
 app.get('/api/daily-tasks/scoreboard', async (req, res) => {
     try {
         const scoreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
-        if(scoreboardData.length === 0) {
+        if (scoreboardData.length === 0) {
             return res.status(404).json({ message: 'No scoreboard data found' });
         }
         const rankedData = rankPlayers(scoreboardData);
