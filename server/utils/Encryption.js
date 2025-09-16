@@ -1,9 +1,28 @@
-function encrypt(text) {
-    return 'running '+text;
+require('dotenv').config();
+
+async function encryptToken(token) {
+    const response = await fetch(process.env.ENCRYPTION, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(token),
+    });
+    const data = await response.json();
+    return data.token;
 }
 
-function decrypt(text) {
-    return text.replace('running ', '');
+async function decryptToken(token) {
+    console.log(token)
+    const response = await fetch(process.env.ENCRYPTION, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(token)
+    });
+    const data = await response.json();
+    return data.token;
 }
 
-module.exports = { encrypt, decrypt };
+module.exports = { encryptToken, decryptToken };

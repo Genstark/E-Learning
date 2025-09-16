@@ -2,8 +2,12 @@
 <!-- SignupPage.vue -->
 <script setup>
 import Header from '@/components/Header.vue';
-import { ref } from 'vue';
+import { ref, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+
+onUnmounted(() => {
+    console.log('Signup component unmounted');
+});
 
 const router = useRouter();
 const name = ref('');

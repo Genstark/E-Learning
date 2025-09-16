@@ -1,9 +1,13 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onUnmounted } from 'vue';
 import Header from '@/components/Header.vue';
 import { evaluate } from "mathjs";
 import { useRouter } from 'vue-router';
+
+onUnmounted(() => {
+    console.log('Task component unmounted');
+});
 
 const router = useRouter();
 

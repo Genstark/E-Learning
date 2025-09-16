@@ -3,18 +3,11 @@ import HomeView from '../views/index.vue';
 // import path from 'path';
 
 const routes = [
-	{
-		path: '/',
-		name: 'home',
-		component: HomeView,
-        children: [
-            {
-                path: '/:id ',
-                name: 'user-home',
-                component: HomeView
-            }
-        ]
-	},
+    {
+        path: '/:id',
+        name: 'user-home',
+        component: HomeView,
+    },
 	{
 		path: '/about',
 		name: 'about',
@@ -31,28 +24,14 @@ const routes = [
 		component: () => import('../views/signup.vue')
 	},
 	{
-		path: '/number-bowling',
-		name: 'number-bowling',
-		component: () => import('../views/numberbowling.vue'),
-        children: [
-            {
-                path: '/:id/number-bowling',
-                name: 'number-bowling-id',
-                component: () => import('../views/numberbowling.vue')
-            }
-        ]
+		path: '/:id/number-bowling',
+		name: 'number-bowling-id',
+		component: () => import('../views/numberbowling.vue')
 	},
 	{
-		path: '/task',
-		name: 'task',
-		component: () => import('../views/task.vue'),
-        children: [
-            {
-                path: '/:id/task',
-                name: 'task-id',
-                component: () => import('../views/task.vue')
-            }
-        ]
+		path: '/:id/task',
+		name: 'task-id',
+		component: () => import('../views/task.vue')
 	},
 ];
 
@@ -71,8 +50,7 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
     const token = localStorage.getItem('token');
-    // const token = getCookie('token');
-    // console.log('cookies', getCookie('token'));
+    // const token = getCookie(token);
     console.log("Navigating to:", to.path);
     console.log("Current token:", token);
 
@@ -101,7 +79,7 @@ router.beforeEach(async (to, from, next) => {
             credentials: 'include'
         });
 
-        if (response.status === 200 || response.status === 201) {
+        if (response.ok) {
             console.log("Token is valid, proceeding to");
             const data = await response.json();
             console.log("User data:", data.user);
