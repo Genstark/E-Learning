@@ -38,7 +38,6 @@ async function authenticateToken(req, res, next) {
         token = await decryptToken({action:'decrpyt', token});
     } else if (req.cookies && req.cookies.token) {
         token = req.cookies.token;
-        console.log('cookies token',token);
         token = await decryptToken({action:'decrpyt', token})
     }
 
@@ -146,7 +145,7 @@ app.post('/api/login', async (req, res) => {
                 if (await bcrypt.compare(password, allUsers[i].password)) {
                     let token = jwt.sign({ email: allUsers[i].email, username: allUsers[i].name }, SECRET_KEY, { expiresIn: '23h' });
                     token = await encryptToken({ action: 'encrypt', token });
-                    res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'Strict', maxAge: 23 * 60 * 60 * 1000 });
+                    res.cookie('token', token, { httpOnly: false, secure: true, sameSite: 'Strict', maxAge: 23 * 60 * 60 * 1000 });
                     return res.status(200).json({ message: 'Login successful', ok: true, token, user: allUsers[i].name });
                 }
             }

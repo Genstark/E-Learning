@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../views/index.vue';
+// import Cookies from "js-cookie";
 // import path from 'path';
 
 const routes = [
@@ -41,15 +42,16 @@ const router = createRouter({
 });
 
 
-// function getCookie(name) {
-//     const value = `; ${document.cookie}`;
-//     const parts = value.split(`; ${name}=`);
-//     if (parts.length === 2) return parts.pop().split(';').shift();
-//     return null;
-// }
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
 
 router.beforeEach(async (to, from, next) => {
     const token = localStorage.getItem('token');
+    console.log('Token from cookies:', getCookie('token'));
     // const token = getCookie(token);
     console.log("Navigating to:", to.path);
     console.log("Current token:", token);
