@@ -90,23 +90,15 @@ app.post('/api/signup', async (req, res) => {
     }
 
     try {
-        // const existingUser = await client.db("E-Learning").collection("users").findOne({ email });
-        // const usernaemeExist = await client.db("E-Learning").collection("users").findOne({ name });
-        const finduser = await client.db("E-Learning").collection("users").find().toArray();
-        for (let i = 0; i < finduser.length; i++) {
-            if (finduser[i].name === name) {
-                return res.status(409).json({ error: 'Username already in use', ok: false });
-            }
-            if (finduser[i].email === email) {
-                return res.status(409).json({ error: 'Email already in use', ok: false });
-            }
+        const existingEmail = await client.db("E-Learning").collection("users").findOne({ email });
+        const existingName = await client.db("E-Learning").collection("users").findOne({ name });
+
+        if (existingName) {
+            return res.status(409).json({ error: 'Username already in use', ok: false });
         }
-        // if (usernaemeExist) {
-        //     return res.status(409).json({ error: 'Username already in use', ok: false });
-        // }
-        // if (existingUser) {
-        //     return res.status(409).json({ error: 'Email already in use', ok: false }); 
-        // }
+        if (existingEmail) {
+            return res.status(409).json({ error: 'Email already in use', ok: false });
+        }
     } catch (error) {
         console.error("Error checking existing user:", error);
         return res.status(500).json({ error: 'Internal server error' });
@@ -135,20 +127,15 @@ app.post('/api/login', async (req, res) => {
         return res.status(400).json({ error: 'All fields are required' });
     }
     try {
-        const allUsers = await client.db("E-Learning").collection("users").find().toArray();
-        // const allUsers = await client.db("E-Learning").collection("users").findOne({ email });
-        if (!allUsers) {
+        const user = await client.db("E-Learning").collection("users").findOne({ email });
+        if (!user) {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
-        for (let i = 0; i < allUsers.length; i++) {
-            if (allUsers[i].email === email) {
-                if (await bcrypt.compare(password, allUsers[i].password)) {
-                    let token = jwt.sign({ email: allUsers[i].email, username: allUsers[i].name }, SECRET_KEY, { expiresIn: '23h' });
-                    token = await encryptToken({ action: 'encrypt', token });
-                    res.cookie('token', token, { httpOnly: false, secure: true, sameSite: 'Strict', maxAge: 23 * 60 * 60 * 1000 });
-                    return res.status(200).json({ message: 'Login successful', ok: true, token, user: allUsers[i].name });
-                }
-            }
+        if (await bcrypt.compare(password, user.password)) {
+            let token = jwt.sign({ email: user.email, username: user.name }, SECRET_KEY, { expiresIn: '23h' });
+            token = await encryptToken({ action: 'encrypt', token });
+            res.cookie('token', token, { httpOnly: false, secure: true, sameSite: 'Strict', maxAge: 23 * 60 * 60 * 1000 });
+            return res.status(200).json({ message: 'Login successful', ok: true, token, user: user.name });
         }
         res.status(401).json({ error: 'Invalid email or password' });
     } catch (error) {
