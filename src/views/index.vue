@@ -8,6 +8,7 @@
 import HeaderComponent from '@/components/Header.vue';
 import Cards from '@/components/Cards.vue';
 import numberBowling from '../../public/images/numberBowlingGame.png';
+import { onUnmounted } from 'vue';
 
 const cards = [
     {
@@ -30,4 +31,8 @@ const cards = [
         page: { name: 'task-id', params: { id: localStorage.getItem('user') } }
     },
 ];
+
+onUnmounted(() => {
+    console.log('Index component unmounted');
+});
 </script>

@@ -10,7 +10,7 @@ const path = require('path');
 const ngrok = require('@ngrok/ngrok');
 const cron = require('node-cron');
 const googleAPI = require('./utils/googleAPI');
-const { encrypt, decrypt } = require('./utils/Encryption');
+const { encryptToken, decryptToken } = require('./utils/Encryption');
 require('dotenv').config();
 
 const app = express();
@@ -30,14 +30,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(express.static(path.join(__dirname, '../dist'), { 'extensions': ['html', 'css', 'js'] }));
 
-function authenticateToken(req, res, next) {
+async function authenticateToken(req, res, next) {
     // Token can be sent via Authorization header or cookie
     let token = req.header('Authorization');
     if (token && token.startsWith('Bearer ')) {
         token = token.replace('Bearer ', '');
-        // console.log("Token from header:", req.cookies.token);
+        token = await decryptToken({action:'decrpyt', token});
     } else if (req.cookies && req.cookies.token) {
         token = req.cookies.token;
+        token = await decryptToken({action:'decrpyt', token})
     }
 
     if (!token) {
@@ -75,11 +76,11 @@ app.get('/api/validate-token', authenticateToken, (req, res) => {
     }
 });
 
-app.get('/api', async (req, res) => {
-    const name = req.query.name || 'World';
-    const last = req.query.last || '!';
-    res.status(200).json({ message: `Hello ${name} ${last}`, key: SECRET_KEY });
-    // res.send(`Hello World! ${name} ${last}`);
+app.post('/api', async (req, res) => {
+    const data = req.body;
+    const token = await decryptToken(data);
+    res.status(200).json({ 'token': token, key: SECRET_KEY });
+    // res.send(`Hello World!`);
 });
 
 app.post('/api/signup', async (req, res) => {
@@ -142,8 +143,9 @@ app.post('/api/login', async (req, res) => {
         for (let i = 0; i < allUsers.length; i++) {
             if (allUsers[i].email === email) {
                 if (await bcrypt.compare(password, allUsers[i].password)) {
-                    const token = jwt.sign({ email: allUsers[i].email, username: allUsers[i].name }, SECRET_KEY, { expiresIn: '23h' });
-                    res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'Strict', maxAge: 23 * 60 * 60 * 1000 });
+                    let token = jwt.sign({ email: allUsers[i].email, username: allUsers[i].name }, SECRET_KEY, { expiresIn: '23h' });
+                    token = await encryptToken({ action: 'encrypt', token });
+                    res.cookie('token', token, { httpOnly: false, secure: true, sameSite: 'Strict', maxAge: 23 * 60 * 60 * 1000 });
                     return res.status(200).json({ message: 'Login successful', ok: true, token, user: allUsers[i].name });
                 }
             }

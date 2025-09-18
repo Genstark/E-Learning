@@ -4,6 +4,7 @@
 import Header from '../components/Header.vue';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { onUnmounted } from 'vue';
 
 const email = ref('');
 const password = ref('');
@@ -26,7 +27,7 @@ async function handleLogin() {
 		}),
 		credentials: 'include' // Include cookies in the request
 	});
-	if (response.status === 200 || response.status === 201) {
+	if (response.ok) {
 		const data = await response.json();
 		localStorage.setItem('token', data.token); // Store the token if needed
 		localStorage.setItem('user', data.user); // Store user info if needed
@@ -42,6 +43,10 @@ async function handleLogin() {
 		alert('Login failed. Please check your credentials.');
 	}
 }
+
+onUnmounted(() => {
+	console.log('Login component unmounted');
+});
 </script>
 
 <template>

@@ -4,6 +4,11 @@
 import { ref, computed, onMounted } from 'vue';
 import Header from '@/components/Header.vue';
 import { evaluate } from 'mathjs';
+import { onUnmounted } from 'vue';
+
+onUnmounted(() => {
+    console.log('NumberBowling component unmounted');
+});
 
 const targetNumbers = ref(
     Array.from({ length: 10 }, (_, i) => ({ value: i + 1, disabled: false }))
