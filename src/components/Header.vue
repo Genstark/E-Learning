@@ -25,16 +25,19 @@ onMounted(() => {
     // ✅ check login state
     const savedUser = localStorage.getItem("user");
     const token = localStorage.getItem("token");
-    if (savedUser && token) {
+    if (savedUser || token) {
         user.value = savedUser;
     }
 });
 
-
+function deleteCookie(name) {
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+}
 // ✅ logout
 function logout() {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    deleteCookie("token");
     user.value = null;
     router.push("/login");
 }

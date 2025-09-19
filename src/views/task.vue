@@ -6,7 +6,10 @@ import { evaluate } from "mathjs";
 import { useRouter } from 'vue-router';
 
 onUnmounted(() => {
-    console.log('Task component unmounted');
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
 });
 
 const router = useRouter();
@@ -19,6 +22,7 @@ const dice = ref([]);
 const userInput = ref('');
 const animatingDice = ref(false);
 const message = ref('');
+const loading = ref(false);
 
 const startTime = ref(null);
 const elapsedTime = ref(0);
@@ -83,6 +87,11 @@ const formatTime = (timeInSeconds) => {
 
 // Enhanced startGame function with detailed logging
 async function startGame() {
+    if (loading.value) return; // Prevent multiple calls
+
+    loading.value = true;
+    message.value = 'Loading game data...';
+
     // Timer start karo
     if (!startTime.value) {
         startTime.value = Date.now();
@@ -91,19 +100,19 @@ async function startGame() {
         }, 1000);
     }
     gameStarted.value = true;
-    
+
     // API se data fetch karo
     try {
-        console.log('🔄 Calling API: http://localhost:3000/api/roll-dice');
-        const response = await fetch('http://localhost:3000/api/roll-dice');
-        
+        console.log(`🔄 Calling API: ${process.env.VUE_APP_URL}/roll-dice`);
+        const response = await fetch(`${process.env.VUE_APP_URL}/roll-dice`);
+
         console.log('📊 Response Status:', response.status);
         console.log('📊 Response OK:', response.ok);
-        
+
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         console.log('📦 Full API Response:', data);
         console.log('🎲 Dice in response:', data.result);
@@ -111,7 +120,7 @@ async function startGame() {
         console.log('🔍 Questions type:', typeof data.questions);
         console.log('📏 Questions length:', data.questions ? data.questions.length : 'undefined');
         console.log('✅ Is questions array?', Array.isArray(data.questions));
-        
+
         // Dice handle karo
         if (data && data.result && Array.isArray(data.result)) {
             dice.value = [...data.result];
@@ -122,7 +131,7 @@ async function startGame() {
             dice.value = [1, 2, 3, 4];
             message.value = 'Using default dice';
         }
-        
+
         // Questions handle karo
         if (data && data.questions) {
             let parsedQuestions = null;
@@ -163,11 +172,12 @@ async function startGame() {
             console.log('❌ No questions in API response');
             message.value = 'No questions from API - using defaults';
         }
-        
     } catch (error) {
         console.error('🚨 API Error:', error);
         dice.value = [1, 2, 3, 4];
         message.value = `API Error: ${error.message}`;
+    } finally {
+        loading.value = false;
     }
 }
 
@@ -210,21 +220,22 @@ async function submitAnswer() {
     // send to server
     if (bothGamesComplete.value) {
         try {
-            const response = await fetch('http://localhost:3000/api/submit/daily-tasks', {
+            const response = await fetch(`${process.env.VUE_APP_URL}/submit/daily-tasks`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    mcqscore: score.value,
+                    mcqScore: score.value,
                     totalNumberSolved: totalSolvedNumber.value,
                     totalInSeconds: totalGameTime.value,
                     totalTime: formatTime(totalGameTime.value),
+                    userName: localStorage.getItem('user'),
                 })
             });
 
             const data = await response.json();
             if (data.ok) {
                 alert('Daily tasks submitted successfully!');
-                router.push('/');
+                router.push({ name: 'user-home', params: { id: localStorage.getItem('user') } });
             } else {
                 alert('Failed to submit daily tasks.');
             }
@@ -234,6 +245,13 @@ async function submitAnswer() {
         }
     }
 }
+
+// function getCookie(name) {
+//     const value = `; ${document.cookie}`;
+//     const parts = value.split(`; ${name}=`);
+//     if (parts.length === 2) return parts.pop().split(';').shift();
+//     return null;
+// }
 
 function goToELibrary() {
     window.open('https://engage-dev1.comprodls.com/', '_blank');
@@ -292,7 +310,7 @@ function endGame() {
                     </h2>
 
                     <!-- Dice -->
-                    <div class="flex justify-center space-x-4 mb-6">
+                    <div v-memo="[dice]" class="flex justify-center space-x-4 mb-6">
                         <div v-for="(d, i) in dice" :key="i" :class="{ 'animate-dice-roll': animatingDice }"
                             class="w-16 h-16 rounded-xl bg-purple-100 text-purple-800 border-2 border-purple-500 text-3xl font-bold flex items-center justify-center shadow-xl hover:scale-105 transition-transform">
                             {{ d }}
@@ -300,7 +318,7 @@ function endGame() {
                     </div>
 
                     <!-- Targets -->
-                    <div class="grid grid-cols-5 gap-3 mb-6">
+                    <div v-memo="[targetNumbers]" class="grid grid-cols-5 gap-3 mb-6">
                         <div v-for="num in targetNumbers" :key="num.value" :class="[
                             'w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold transition-all',
                             num.disabled
@@ -386,7 +404,7 @@ function endGame() {
                             {{ answerFeedback.message }}
                         </div>
                     </div>
-                    
+
                     <!-- Timer and Bowling Progress -->
                     <div class="w-full flex justify-between text-sm text-gray-700 mt-4">
                         <p>🕒 Time: {{ formatTime(elapsedTime) }}</p>

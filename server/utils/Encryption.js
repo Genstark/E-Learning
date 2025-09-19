@@ -1,5 +1,7 @@
 require('dotenv').config();
 
+const tokenCache = new Map(); // Simple in-memory cache
+
 async function encryptToken(token) {
     const response = await fetch(process.env.ENCRYPTION, {
         method: 'POST',
@@ -13,7 +15,10 @@ async function encryptToken(token) {
 }
 
 async function decryptToken(token) {
-    console.log(token)
+    const cacheKey = JSON.stringify(token);
+    if (tokenCache.has(cacheKey)) {
+        return tokenCache.get(cacheKey);
+    }
     const response = await fetch(process.env.ENCRYPTION, {
         method: 'POST',
         headers: {
@@ -22,6 +27,9 @@ async function decryptToken(token) {
         body: JSON.stringify(token)
     });
     const data = await response.json();
+    tokenCache.set(cacheKey, data.token);
+    // Expire cache after 10 minutes
+    setTimeout(() => tokenCache.delete(cacheKey), 10 * 60 * 1000);
     return data.token;
 }
 

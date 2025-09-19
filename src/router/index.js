@@ -1,13 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import HomeView from '../views/index.vue';
 // import Cookies from "js-cookie";
 // import path from 'path';
 
 const routes = [
     {
+        path: '/',
+        name: 'home',
+        component: () => import('../views/index.vue'),
+    },
+    {
         path: '/:id',
         name: 'user-home',
-        component: HomeView,
+        component: () => import('../views/index.vue'),
     },
 	{
 		path: '/about',
@@ -50,19 +54,26 @@ function getCookie(name) {
 }
 
 router.beforeEach(async (to, from, next) => {
-    const token = localStorage.getItem('token');
-    console.log('Token from cookies:', getCookie('token'));
-    // const token = getCookie(token);
-    console.log("Navigating to:", to.path);
-    console.log("Current token:", token);
+    // const token = getCookie('token') ? getCookie('token') : localStorage.getItem('token');
+    const token = getCookie('token');
+    console.log('🔐 Router Guard - Navigating to:', to.path);
+    console.log('🍪 Token from cookies:', getCookie('token'));
+    console.log('🔑 Current token:', token);
 
     // Agar user login page par ja raha hai, guard skip karo
     if (to.path === '/login') {
+        console.log('✅ Skipping guard for login page');
         return next();
+    }
+
+    if (to.path === '/') {
+        console.log('✅ Skipping guard for home page');
+        return next({path: '/login'});
     }
 
     // Agar token nahi hai, login par bhejo (sirf agar already login par nahi ho)
     if (!token) {
+        console.log('❌ No token found, redirecting to login');
         if (to.path !== '/login' && to.path !== '/signup') {
             return next({ path: '/login' });
         } else {
@@ -71,8 +82,8 @@ router.beforeEach(async (to, from, next) => {
     }
 
     try {
-        console.log("Validating token:", token);
-        const response = await fetch('http://localhost:3000/api/validate-token', {
+        console.log('🔍 Validating token with server...');
+        const response = await fetch(`${process.env.VUE_APP_URL}/validate-token`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -81,13 +92,13 @@ router.beforeEach(async (to, from, next) => {
             credentials: 'include'
         });
 
+        console.log('📊 Token validation response status:', response.status);
         if (response.ok) {
-            console.log("Token is valid, proceeding to");
-            const data = await response.json();
-            console.log("User data:", data.user);
+            // const data = await response.json();
+            console.log('✅ Token is valid');
             return next();
         } else {
-            console.warn("Invalid token, cleaning up...");
+            console.log('❌ Token invalid, cleaning up...');
 
             // 🔹 LocalStorage se remove karo
             localStorage.removeItem('token');
@@ -102,7 +113,7 @@ router.beforeEach(async (to, from, next) => {
             }
         }
     } catch (error) {
-        console.error("Error validating token:", error);
+        console.error("🚨 Error validating token:", error);
         // Cleanup on error bhi
         localStorage.removeItem('token');
         document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
