@@ -103,8 +103,8 @@ async function startGame() {
 
     // API se data fetch karo
     try {
-        console.log(`🔄 Calling API: ${process.env.VUE_APP_URL}/api/roll-dice`);
-        const response = await fetch(`${process.env.VUE_APP_URL}/api/roll-dice`);
+        console.log(`🔄 Calling API: ${process.env.VUE_APP_URL}/roll-dice`);
+        const response = await fetch(`${process.env.VUE_APP_URL}/roll-dice`);
 
         console.log('📊 Response Status:', response.status);
         console.log('📊 Response OK:', response.ok);
@@ -220,14 +220,15 @@ async function submitAnswer() {
     // send to server
     if (bothGamesComplete.value) {
         try {
-            const response = await fetch(`${process.env.VUE_APP_URL}/api/submit/daily-tasks`, {
+            const response = await fetch(`${process.env.VUE_APP_URL}/submit/daily-tasks`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    mcqscore: score.value,
+                    mcqScore: score.value,
                     totalNumberSolved: totalSolvedNumber.value,
                     totalInSeconds: totalGameTime.value,
                     totalTime: formatTime(totalGameTime.value),
+                    userName: localStorage.getItem('user'),
                 })
             });
 
@@ -244,6 +245,13 @@ async function submitAnswer() {
         }
     }
 }
+
+// function getCookie(name) {
+//     const value = `; ${document.cookie}`;
+//     const parts = value.split(`; ${name}=`);
+//     if (parts.length === 2) return parts.pop().split(';').shift();
+//     return null;
+// }
 
 function goToELibrary() {
     window.open('https://engage-dev1.comprodls.com/', '_blank');
@@ -396,7 +404,7 @@ function endGame() {
                             {{ answerFeedback.message }}
                         </div>
                     </div>
-                    
+
                     <!-- Timer and Bowling Progress -->
                     <div class="w-full flex justify-between text-sm text-gray-700 mt-4">
                         <p>🕒 Time: {{ formatTime(elapsedTime) }}</p>

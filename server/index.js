@@ -35,10 +35,8 @@ async function authenticateToken(req, res, next) {
     let token = req.header('Authorization');
     if (token && token.startsWith('Bearer ')) {
         token = token.replace('Bearer ', '');
-        token = await decryptToken({action:'decrpyt', token});
     } else if (req.cookies && req.cookies.token) {
         token = req.cookies.token;
-        token = await decryptToken({action:'decrpyt', token})
     }
 
     if (!token) {
@@ -46,7 +44,8 @@ async function authenticateToken(req, res, next) {
     }
 
     try {
-        const decoded = jwt.verify(token, SECRET_KEY);
+        const decodedToken = await decryptToken({action:'decrpyt', token});
+        const decoded = jwt.verify(decodedToken, SECRET_KEY);
         req.user = decoded;
         next();
     } catch (ex) {
@@ -56,19 +55,24 @@ async function authenticateToken(req, res, next) {
 
 const uri = process.env.MONGO;
 const client = new MongoClient(uri);
-client.connect().then(() => {
-    client.db("E-Learning");
-    console.log("Successfully connected");
+
+client.connect().then(async () => {
+    const db = client.db("E-Learning");
+    // Ensure unique indexes on email and name fields
+    await db.collection("users").createIndex({ email: 1 }, { unique: true });
+    await db.collection("users").createIndex({ name: 1 }, { unique: true });
+    console.log("Successfully connected to MongoDB and ensured indexes");
 }).catch(err => {
     console.error("Failed to connect:", err);
 });
 
 app.get('/api/validate-token', authenticateToken, (req, res) => {
-    console.log("Token is valid for user:", req.user);
     try {
         if (!req.user) {
+            console.log("Token is invalid");
             return res.status(401).json({ error: 'Invalid token', ok: false });
         }
+        // console.log("Token is valid for user:", req.user);
         res.status(200).json({ message: 'Token is valid', ok: true, user: req.user });
     }
     catch (error) {
@@ -90,14 +94,18 @@ app.post('/api/signup', async (req, res) => {
     }
 
     try {
-        const existingEmail = await client.db("E-Learning").collection("users").findOne({ email });
-        const existingName = await client.db("E-Learning").collection("users").findOne({ name });
+        // Use $or to check both email and name in a single query for better performance
+        const existingUser = await client.db("E-Learning").collection("users").findOne({
+            $or: [{ email }, { name }]
+        });
 
-        if (existingName) {
-            return res.status(409).json({ error: 'Username already in use', ok: false });
-        }
-        if (existingEmail) {
-            return res.status(409).json({ error: 'Email already in use', ok: false });
+        if (existingUser) {
+            if (existingUser.email === email) {
+                return res.status(409).json({ error: 'Email already in use', ok: false });
+            }
+            if (existingUser.name === name) {
+                return res.status(409).json({ error: 'Username already in use', ok: false });
+            }
         }
     } catch (error) {
         console.error("Error checking existing user:", error);
@@ -170,30 +178,15 @@ app.post('/api/submit', async (req, res) => {
     }
 });
 
-app.get('/api/number-bowling/data', async (req, res) => {
-    try {
-        const bowlingData = await client.db("E-Learning").collection("number-bowling-score").find().toArray();
-        if (bowlingData.length > 0) {
-            res.status(200).json(bowlingData);
-        }
-        else {
-            res.status(404).json({ message: 'No bowling data found' });
-        }
-    } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-
 app.get('/api/daily-tasks/scoreboard', async (req, res) => {
     try {
         const scoreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
         if (scoreboardData.length === 0) {
             return res.status(404).json({ message: 'No scoreboard data found' });
         }
-        const rankedData = rankPlayers(scoreboardData);
+        const rankedData = await rankPlayers(scoreboardData);
         console.log(rankedData);
-        res.status(200).json(rankedData);
+        res.status(200).json({scoreData: rankedData, ok: true});
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
     }
@@ -215,30 +208,19 @@ function rankPlayers(players) {
     });
 }
 
-app.get('/api/submit/data', async (req, res) => {
-    try {
-        const submitData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
-        const rankedData = rankPlayers(submitData);
-        if (rankedData.length > 0) {
-            res.status(200).json(rankedData);
-        }
-        else {
-            res.status(404).json({ message: 'No submit data found' });
-        }
-    } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
 app.post('/api/submit/daily-tasks', async (req, res) => {
     const response = req.body;
+    const findEmail = await client.db("E-Learning").collection("users").findOne({ name: response.userName });
+    if (!findEmail) {
+        return res.status(400).json({ error: 'User not found', ok: false });
+    }
+    response.userEmail = findEmail.email;
     try {
         await client.db("E-Learning").collection("daily-tasks").insertOne(response);
         console.log("Daily tasks submitted successfully");
     } catch (error) {
         console.error("Error submitting daily tasks:", error);
     }
-    console.log(response._id);
     res.status(200).json({ message: 'Daily tasks submitted successfully', ok: true });
 });
 

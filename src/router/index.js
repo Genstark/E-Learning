@@ -83,7 +83,7 @@ router.beforeEach(async (to, from, next) => {
 
     try {
         console.log('🔍 Validating token with server...');
-        const response = await fetch('http://localhost:3000/api/validate-token', {
+        const response = await fetch(`${process.env.VUE_APP_URL}/validate-token`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },

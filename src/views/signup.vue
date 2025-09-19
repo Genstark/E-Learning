@@ -42,7 +42,7 @@ async function handleSignup() {
         };
 
         // If env not set, fallback to localhost
-        const apiUrl = `${process.env.VUE_APP_URL || 'http://localhost:3000'}/api/signup`;
+        const apiUrl = `${process.env.VUE_APP_URL}/signup`;
 
         const response = await fetch(apiUrl, {
             method: 'POST',
