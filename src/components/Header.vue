@@ -49,18 +49,20 @@ function logout() {
             <div class="flex justify-between items-center py-3 sm:py-4">
                 <!-- Left: Logo + Nav -->
                 <div class="flex items-center space-x-4 sm:space-x-6">
-                    <a href="/" class="text-2xl sm:text-3xl font-bold text-primary-600 whitespace-nowrap inline-block">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-primary-600 whitespace-nowrap inline-block">
                         <!-- E-L -->
-                    </a>
+                        <router-link :to="`/${user}`" class="hover:text-primary-700">
+                            <!-- E-Learning -->
+                        </router-link>
+                    </h1>
 
                     <!-- Nav (hidden on mobile) -->
                     <nav class="hidden md:flex items-center space-x-4 lg:space-x-6">
-                        <a href="#"
-                            class="text-sm sm:text-base lg:text-lg text-gray-700 hover:text-primary-600">Shots</a>
-                        <a href="#"
-                            class="text-sm sm:text-base lg:text-lg text-gray-700 hover:text-primary-600">Explore</a>
-                        <a href="#"
-                            class="text-sm sm:text-base lg:text-lg text-gray-700 hover:text-primary-600">Blog</a>
+                        <router-link to="/about" class="text-sm sm:text-base lg:text-lg text-gray-700 hover:text-primary-600">About</router-link>
+                        <router-link to="/explore" class="text-sm sm:text-base lg:text-lg text-gray-700 hover:text-primary-600">Explore</router-link>
+                        <router-link :to="user ? `/${user}/scores` : '/scores'" class="text-sm sm:text-base lg:text-lg text-gray-700 hover:text-primary-600">
+                            Scores
+                        </router-link>
                     </nav>
                 </div>
 
@@ -105,9 +107,15 @@ function logout() {
             <!-- Mobile Menu -->
             <div v-if="isMobileMenuOpen" class="md:hidden space-y-4 sm:space-y-6 pb-4 sm:pb-6">
                 <nav class="flex flex-col space-y-2 sm:space-y-3">
-                    <a href="#" class="text-sm sm:text-base text-gray-700 hover:text-primary-600">Shots</a>
-                    <a href="#" class="text-sm sm:text-base text-gray-700 hover:text-primary-600">Explore</a>
-                    <a href="#" class="text-sm sm:text-base text-gray-700 hover:text-primary-600">Blog</a>
+                    <p class="text-sm sm:text-base text-gray-700 hover:text-primary-600">About
+                        <router-link :to="`/${user}`"></router-link>
+                    </p>
+                    <p class="text-sm sm:text-base text-gray-700 hover:text-primary-600">
+                        Explore
+                    </p>
+                    <p class="text-sm sm:text-base text-gray-700 hover:text-primary-600">Scores
+                        <router-link :to="user ? `/${user}/scores` : '/scores'"></router-link>
+                    </p>
                 </nav>
 
                 <!-- ✅ If user logged in -->

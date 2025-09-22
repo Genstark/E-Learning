@@ -25,7 +25,7 @@ const cards = [
         // image: 'https://img.freepik.com/free-vector/student-studying-online-isometric-illustration_52683-79996.jpg?w=740&T=ST=1700000000~EXP=1700000000~HMAC=yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy'
     },
     {
-        title: 'Task',
+        title: 'Daily Task',
         description: 'Complete the assigned tasks and quizzes.',
         image: 'https://img.freepik.com/free-vector/online-learning-isometric-landing-page_52683-51940.jpg?w=740&T=ST=1700000000~EXP=1700000000~HMAC=zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',
         page: { name: 'task-id', params: { id: localStorage.getItem('user') } }

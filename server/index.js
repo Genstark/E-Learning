@@ -185,7 +185,6 @@ app.get('/api/daily-tasks/scoreboard', async (req, res) => {
             return res.status(404).json({ message: 'No scoreboard data found' });
         }
         const rankedData = await rankPlayers(scoreboardData);
-        console.log(rankedData);
         res.status(200).json({scoreData: rankedData, ok: true});
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
@@ -258,7 +257,7 @@ app.listen(process.env.PORT || 3000, () => {
     console.log(`Server is running on port http://localhost:${process.env.PORT || 3000}`);
 });
 
-const canRunNgrok = false; // Set to true if you want to run ngrok
+const canRunNgrok = true; // Set to true if you want to run ngrok
 if (canRunNgrok) {
     ngrok.connect({ addr: process.env.PORT || 3000, authtoken: process.env.NGROK })
         .then(listener => console.log(`Ingress established at: ${listener.url()}`));

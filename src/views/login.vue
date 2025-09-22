@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <!-- LoginPage.vue -->
 <script setup>
-import Header from '../components/Header.vue';
+// import Header from '../components/Header.vue';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { onUnmounted } from 'vue';
@@ -56,7 +56,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-	<Header />
+	<!-- <Header /> -->
 	<div class="min-h-screen flex items-center justify-center bg-gray-100">
 		<div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md"
 			:class="{ 'cursor-not-allowed opacity-50': isLoading }">
