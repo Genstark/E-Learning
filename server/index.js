@@ -253,8 +253,10 @@ let job = cron.schedule("* * * * * *", async () => {
     }
 });
 
-app.listen(process.env.PORT || 3000, () => {
-    console.log(`Server is running on port http://localhost:${process.env.PORT || 3000}`);
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT || 3000, () => {
+    console.log(`Server is running on port http://localhost:${PORT}`);
 });
 
 const canRunNgrok = true; // Set to true if you want to run ngrok
