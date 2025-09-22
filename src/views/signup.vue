@@ -3,7 +3,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import Header from '../components/Header.vue';
+// import Header from '../components/Header.vue';
 
 const name = ref('');
 const email = ref('');
@@ -79,7 +79,7 @@ async function handleSignup() {
 </script>
 
 <template>
-    <Header />
+    <!-- <Header /> -->
     <div class="min-h-screen flex items-center justify-center bg-gray-100">
         <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
             <div class="space-y-4">
