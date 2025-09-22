@@ -38,6 +38,16 @@ const routes = [
 		name: 'task-id',
 		component: () => import('../views/task.vue')
 	},
+    {
+        path: '/:id/scores',
+        name: 'score-id',
+        component: () => import('../views/score.vue')
+    },
+    {
+        path: '/:id/profile',
+        name: 'profile-id',
+        component: () => import('../views/profile.vue')
+    },
 ];
 
 const router = createRouter({
