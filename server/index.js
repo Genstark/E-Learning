@@ -66,7 +66,7 @@ client.connect().then(async () => {
     console.error("Failed to connect:", err);
 });
 
-app.get('/api/validate-token', authenticateToken, (req, res) => {
+app.get('/api/validate-token', authenticateToken, (req, res) => { 
     try {
         if (!req.user) {
             console.log("Token is invalid");
@@ -80,14 +80,8 @@ app.get('/api/validate-token', authenticateToken, (req, res) => {
     }
 });
 
-app.post('/api', async (req, res) => {
-    const data = req.body;
-    const token = await decryptToken(data);
-    res.status(200).json({ 'token': token, key: SECRET_KEY });
-    // res.send(`Hello World!`);
-});
 
-app.post('/api/signup', async (req, res) => {
+app.post('/api/signup', async (req, res) => { 
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
         return res.status(400).json({ error: 'All fields are required' });
@@ -129,7 +123,7 @@ app.post('/api/signup', async (req, res) => {
     }
 });
 
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', async (req, res) => { 
     const { email, password } = req.body;
     if (!email || !password) {
         return res.status(400).json({ error: 'All fields are required' });
@@ -142,7 +136,7 @@ app.post('/api/login', async (req, res) => {
         if (await bcrypt.compare(password, user.password)) {
             let token = jwt.sign({ email: user.email, username: user.name }, SECRET_KEY, { expiresIn: '23h' });
             token = await encryptToken({ action: 'encrypt', token });
-            res.cookie('token', token, { httpOnly: false, secure: true, sameSite: 'Strict', maxAge: 23 * 60 * 60 * 1000 });
+            res.cookie('token', token, { httpOnly: false, secure: true, sameSite: "Strict", maxAge: 23 * 60 * 60 * 1000 });
             return res.status(200).json({ message: 'Login successful', ok: true, token, user: user.name });
         }
         res.status(401).json({ error: 'Invalid email or password' });
@@ -151,7 +145,7 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-app.get('/api/roll-dice', async (req, res) => {
+app.get('/api/roll-dice', async (req, res) => { 
     try {
         // console.log(questions);
         res.status(200).json({ result: rolldicenumber, 'questions': questions });
@@ -160,25 +154,7 @@ app.get('/api/roll-dice', async (req, res) => {
     }
 });
 
-app.post('/api/submit', async (req, res) => {
-    const { timeTaken, clearedTargets, totalTime } = req.body;
-    if (typeof timeTaken !== 'number' || typeof clearedTargets !== 'number') {
-        return res.status(400).json({ error: 'Invalid data' });
-    }
-    try {
-        await client.db("E-Learning").collection("number-bowling-score").insertOne({
-            timeTaken,
-            clearedTargets,
-            totalTime,
-            submittedAt: new Date(),
-        });
-        res.status(201).json({ message: 'Score submitted successfully', ok: true });
-    } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-app.get('/api/daily-tasks/scoreboard', async (req, res) => {
+app.get('/api/daily-tasks/scoreboard', async (req, res) => { 
     try {
         const scoreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
         if (scoreboardData.length === 0) {
@@ -207,7 +183,7 @@ function rankPlayers(players) {
     });
 }
 
-app.post('/api/submit/daily-tasks', async (req, res) => {
+app.post('/api/submit/daily-tasks', async (req, res) => { 
     const response = req.body;
     const findEmail = await client.db("E-Learning").collection("users").findOne({ name: response.userName });
     if (!findEmail) {
@@ -253,7 +229,7 @@ let job = cron.schedule("* * * * * *", async () => {
     }
 });
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
     console.log(`Server is running on port http://localhost:${PORT}`);

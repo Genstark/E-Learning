@@ -115,25 +115,19 @@ async function startGame() {
 
         const data = await response.json();
         console.log('📦 Full API Response:', data);
-        console.log('🎲 Dice in response:', data.result);
-        console.log('❓ Questions in response:', data.questions.questions);
-        console.log('🔍 Questions type:', typeof data.questions);
-        console.log('📏 Questions length:', data.questions ? data.questions.length : 'undefined');
-        console.log('✅ Is questions array?', Array.isArray(data.questions));
 
         // Dice handle karo
         if (data && data.result && Array.isArray(data.result)) {
             dice.value = [...data.result];
-            console.log('✅ Dice loaded from API:', dice.value);
             message.value = 'API data loaded - Dice updated';
         } else {
-            console.log('❌ Invalid dice data from API');
             dice.value = [1, 2, 3, 4];
             message.value = 'Using default dice';
         }
 
         // Questions handle karo
         if (data && data.questions) {
+            console.log('📦 API Questions:', data.questions);
             let parsedQuestions = null;
             // Agar string hai toh parse karo
             if (typeof data.questions === 'string') {
@@ -145,14 +139,11 @@ async function startGame() {
                     } else if (Array.isArray(parsed)) {
                         parsedQuestions = parsed;
                     }
-                    console.log('✅ Parsed questions from string:', parsedQuestions);
                 } catch (parseError) {
                     console.error('❌ Failed to parse questions string:', parseError);
-                    console.log('❌ Original string:', data.questions);
                 }
             } else if (Array.isArray(data.questions)) {
                 parsedQuestions = data.questions;
-                console.log('✅ Questions already array:', parsedQuestions);
             }
 
             if (parsedQuestions && Array.isArray(parsedQuestions) && parsedQuestions.length > 0) {
@@ -161,15 +152,11 @@ async function startGame() {
                 selectedAnswer.value = null;
                 answerFeedback.value = null;
                 score.value = 0;
-                console.log('✅ Questions loaded! Count:', questions.value.length);
-                console.log('✅ First question:', questions.value[0]);
                 message.value = `API questions loaded: ${questions.value.length} questions`;
             } else {
-                console.log('❌ Parsed questions invalid');
                 message.value = 'API questions parsing failed - using defaults';
             }
         } else {
-            console.log('❌ No questions in API response');
             message.value = 'No questions from API - using defaults';
         }
     } catch (error) {
@@ -246,13 +233,6 @@ async function submitAnswer() {
     }
 }
 
-// function getCookie(name) {
-//     const value = `; ${document.cookie}`;
-//     const parts = value.split(`; ${name}=`);
-//     if (parts.length === 2) return parts.pop().split(';').shift();
-//     return null;
-// }
-
 function goToELibrary() {
     window.open('https://engage-dev1.comprodls.com/', '_blank');
 }
@@ -318,13 +298,13 @@ function endGame() {
                     </div>
 
                     <!-- Targets -->
-                    <div v-memo="[targetNumbers]" class="grid grid-cols-5 gap-3 mb-6">
+                    <div class="grid grid-cols-5 gap-3 mb-6">
                         <div v-for="num in targetNumbers" :key="num.value" :class="[
-                            'w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold transition-all',
+                            'w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold transition-all',
                             num.disabled
                                 ? 'bg-gray-300 text-gray-500 line-through scale-95 animate-cleared-target'
                                 : 'bg-purple-100 text-purple-800 border border-purple-400 hover:bg-purple-200 hover:scale-105'
-                        ]">
+                            ]">
                             {{ num.value }}
                         </div>
                     </div>

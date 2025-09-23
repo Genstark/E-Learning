@@ -107,14 +107,14 @@ function logout() {
             <!-- Mobile Menu -->
             <div v-if="isMobileMenuOpen" class="md:hidden space-y-4 sm:space-y-6 pb-4 sm:pb-6">
                 <nav class="flex flex-col space-y-2 sm:space-y-3">
-                    <p class="text-sm sm:text-base text-gray-700 hover:text-primary-600">About
-                        <router-link :to="`/${user}`"></router-link>
+                    <p class="text-l sm:text-base text-gray-700 hover:text-primary-600 font-bold" @click="router.push('/about')">About
+                        <!-- <router-link :to="`/${user}`"></router-link> -->
                     </p>
-                    <p class="text-sm sm:text-base text-gray-700 hover:text-primary-600">
+                    <p class="text-l sm:text-base text-gray-700 hover:text-primary-600 font-bold" @click="router.push('/explore')">
                         Explore
                     </p>
-                    <p class="text-sm sm:text-base text-gray-700 hover:text-primary-600">Scores
-                        <router-link :to="user ? `/${user}/scores` : '/scores'"></router-link>
+                    <p class="text-l sm:text-base text-gray-700 hover:text-primary-600 font-bold" @click="router.push({name:'score-id', params: { id: user.id }})">Scores
+                        <!-- <router-link :to="user ? `/${user}/scores` : '/scores'"></router-link> -->
                     </p>
                 </nav>
 

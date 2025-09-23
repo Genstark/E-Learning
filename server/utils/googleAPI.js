@@ -1,4 +1,5 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+require('dotenv').config();
 
 // Load your API key securely
 const genAI = new GoogleGenerativeAI(process.env.GEMINI);
@@ -15,7 +16,7 @@ async function generateText(prompt) {
                     {
                         text: `
                             You are a fun and engaging teacher who creates educational puzzles for children aged 6-14. 
-                            Your job is to turn the following text into a mix of multiple-choice questions.
+                            Your job is to turn the following text into a mix of multiple-choice 10 questions.
                             question like:
                             {
                                 "questions": [
