@@ -145,6 +145,22 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+app.get('/api/repeat-check/:user', async (req, res) => { 
+    try {
+        const scoreboardData = await client.db("E-Learning").collection("daily-tasks").findOne({ userName: req.params.user });
+        console.log(scoreboardData);
+        if(scoreboardData){
+            return res.status(200).json({ message: 'player found', ok: true, user: req.user, data: scoreboardData });
+        }
+        else{
+            return res.status(200).json({ message: 'player not found', ok: false });
+        }
+    }
+    catch (error) {
+        return res.status(500).json({ error: 'Internal server error', ok: false });
+    }
+});
+
 app.get('/api/roll-dice', async (req, res) => { 
     try {
         // console.log(questions);
@@ -207,7 +223,7 @@ app.get(/.*/, (req, res) => {
 let job = cron.schedule("* * * * * *", async () => {
     if (!SECRET_KEY) {
         SECRET_KEY = generateSecretKey();
-        console.log("Generated new SECRET_KEY");
+        console.info("Generated new SECRET_KEY");
     }
     if (rolldicenumber.length == 0 && questions.length == 0) {
         console.log("Running initial fetch for dice and questions");
