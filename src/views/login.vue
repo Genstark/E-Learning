@@ -20,6 +20,7 @@ async function handleLogin() {
 
 	isLoading.value = true; // start loading
 	try {
+		console.log('Attempting login with:', process.env.VUE_APP_URL);
 		const response = await fetch(`${process.env.VUE_APP_URL}/login`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
