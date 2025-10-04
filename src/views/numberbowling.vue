@@ -172,6 +172,18 @@ function resetGame() {
     isPenaltyActive.value = false;
     penaltyTimeRemaining.value = 0;
 }
+
+function stop() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    if (penaltyInterval) {
+        clearInterval(penaltyInterval);
+        penaltyInterval = null;
+    }
+    message.value = 'Game stopped. You can reset to start a new game.';
+}
 </script>
 
 <template>
@@ -223,6 +235,10 @@ function resetGame() {
                             class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 rounded-md shadow">
                             🔄 Reset
                         </button>
+                        <button @click="stop"
+                            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 rounded-md shadow">
+                            ⏹ Stop
+                        </button>
                     </div>
 
                     <!-- Message -->
@@ -270,28 +286,32 @@ function resetGame() {
         </div>
         <ol class="list-decimal list-inside space-y-3 text-gray-800 text-base leading-relaxed pl-2">
             <li>
-                <span class="font-semibold text-purple-700">Roll Dice:</span>
+                <span class="font-semibold text-purple-700">Roll Dice: </span>
                 <span>Click <span class="inline-block bg-purple-200 text-purple-800 px-2 py-0.5 rounded font-mono text-sm">🎲 Roll Dice</span> to roll four dice. Use these numbers to form expressions.</span>
             </li>
             <li>
-                <span class="font-semibold text-purple-700">Form Expressions:</span>
-                <span>Combine the dice numbers with <span class="font-mono bg-gray-100 px-1 rounded">+</span> <span class="font-mono bg-gray-100 px-1 rounded">-</span> <span class="font-mono bg-gray-100 px-1 rounded">*</span> <span class="font-mono bg-gray-100 px-1 rounded">/</span> and parentheses to match a <span class="font-bold text-indigo-700">target number (1-10)</span>.</span>
+                <span class="font-semibold text-purple-700">Form Expressions: </span>
+                <span>Combine the dice numbers with <span class="font-mono bg-gray-100 px-1 rounded">+</span> <span class="font-mono bg-gray-100 px-1 rounded">-</span> <span class="font-mono bg-gray-100 px-1 rounded">*</span> <span class="font-mono bg-gray-100 px-1 rounded">/</span><span class="font-mono bg-gray-100 px-1 rounded">()</span> and parentheses to match a <span class="font-bold text-indigo-700">target number (1-10)</span>.</span>
             </li>
             <li>
-                <span class="font-semibold text-purple-700">Submit:</span>
+                <span class="font-semibold text-purple-700">Submit: </span>
                 <span>Enter your expression and click <span class="inline-block bg-green-200 text-green-800 px-2 py-0.5 rounded font-mono text-sm">✅ Submit</span> or press <span class="font-mono bg-gray-100 px-1 rounded">Enter</span>.</span>
             </li>
             <li>
-                <span class="font-semibold text-purple-700">Clear Targets:</span>
+                <span class="font-semibold text-purple-700">Clear Targets: </span>
                 <span>If correct, the matching target number is cleared. Each die number can be used only once per expression.</span>
             </li>
             <li>
-                <span class="font-semibold text-purple-700">Penalties:</span>
+                <span class="font-semibold text-purple-700">Penalties: </span>
                 <span>Rolling dice again or resetting mid-game adds a <span class="text-red-600 font-bold">+1 min penalty</span> to your time.</span>
             </li>
             <li>
-                <span class="font-semibold text-purple-700">Finish:</span>
+                <span class="font-semibold text-purple-700">Finish: </span>
                 <span>Clear all numbers 1-10 to finish. Your best times appear on the <span class="font-bold text-indigo-700">leaderboard</span>!</span>
+            </li>
+            <li>
+                <span class="font-semibold text-purple-700">Controls: </span>
+                <span>Use the <span class="inline-block bg-red-200 text-red-800 px-2 py-0.5 rounded font-mono text-sm">🔄 Reset</span> button to restart anytime. The <span class="inline-block bg-gray-200 text-gray-800 px-2 py-0.5 rounded font-mono text-sm">⏹ Stop</span> button pauses the game.</span>
             </li>
         </ol>
         <div class="mt-6 flex items-center gap-2 text-indigo-700 font-semibold text-lg">
