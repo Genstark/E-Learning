@@ -41,10 +41,10 @@ onUnmounted(() => {
                     <tr v-for="(item, index) in scores" :key="index" class="hover:bg-green-50">
                         <td class="px-4 py-3 text-sm text-gray-700 font-semibold">{{ index + 1 }}</td>
                         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ item.userName }}</td>
-                        <td class="px-4 py-3 text-sm text-center text-gray-700">{{ item.totalNumberSolved }}</td>
+                        <td class="px-4 py-3 text-sm text-center text-gray-700">{{ item.numberBowlingScore }}</td>
                         <td class="px-4 py-3 text-sm text-center text-gray-700">{{ item.mcqScore }}</td>
-                        <td class="px-4 py-3 text-sm text-center text-gray-700 font-medium">{{ item.totalNumberSolved + item.mcqScore }}</td>
-                        <td class="px-4 py-3 text-sm text-center text-gray-700">{{ item.totalTime }}</td>
+                        <td class="px-4 py-3 text-sm text-center text-gray-700 font-medium">{{ item.totalScore }}</td>
+                        <td class="px-4 py-3 text-sm text-center text-gray-700">{{ item.totalTime }}</td>   
                     </tr>
                 </tbody>
             </table>
