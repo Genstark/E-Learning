@@ -11,6 +11,7 @@ const ngrok = require('@ngrok/ngrok');
 const cron = require('node-cron');
 const googleAPI = require('./utils/googleAPI');
 const { encryptToken, decryptToken } = require('./utils/Encryption');
+const { uploadData } = require('./utils/uploadingData');
 require('dotenv').config();
 
 const app = express();
@@ -105,7 +106,7 @@ app.post('/api/signup', async (req, res) => {
         console.error("Error checking existing user:", error);
         return res.status(500).json({ error: 'Internal server error' });
     }
-    
+
     const hashedPassword = await bcrypt.hash(password, 10);
     try {
         await client.db("E-Learning").collection("users").insertOne({
@@ -182,6 +183,13 @@ app.get('/api/daily-tasks/scoreboard', async (req, res) => {
     }
 });
 
+app.get('/api/download-score', async (req, res) => {
+    const getsocreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
+    console.log('get all scoreboard data');
+    const upload = await uploadData(getsocreboardData, 'upload');
+    res.status(200).json({ message: 'Uploaded to S3', ok: true, upload });
+});
+
 function rankPlayers(players) {
     // Sort players
     return [...players].sort((a, b) => {
@@ -206,7 +214,6 @@ app.post('/api/submit/daily-tasks', async (req, res) => {
     }
     response.userEmail = findEmail.email;
     try {
-        await client.db("E-Learning").collection("daily-tasks").insertOne(response);
         console.log("Daily tasks submitted successfully");
     } catch (error) {
         console.error("Error submitting daily tasks:", error);
