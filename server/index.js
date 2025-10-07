@@ -11,7 +11,7 @@ const ngrok = require('@ngrok/ngrok');
 const cron = require('node-cron');
 const googleAPI = require('./utils/googleAPI');
 const { encryptToken, decryptToken } = require('./utils/Encryption');
-const { uploadData } = require('./utils/uploadingData');
+const { uploadData, downloadData } = require('./utils/uploadingData');
 require('dotenv').config();
 
 const app = express();
@@ -148,7 +148,6 @@ app.post('/api/login', async (req, res) => {
 app.get('/api/repeat-check/:user', async (req, res) => {
     try {
         const scoreboardData = await client.db("E-Learning").collection("daily-tasks").findOne({ userName: req.params.user });
-        console.log(scoreboardData);
         if (scoreboardData) {
             return res.status(200).json({ message: 'player found', ok: true, user: req.user, data: scoreboardData });
         }
@@ -161,6 +160,7 @@ app.get('/api/repeat-check/:user', async (req, res) => {
     }
 });
 
+// Get dice roll and questions
 app.get('/api/roll-dice', async (req, res) => {
     try {
         // console.log(questions);
@@ -170,12 +170,15 @@ app.get('/api/roll-dice', async (req, res) => {
     }
 });
 
+// Get scoreboard data
 app.get('/api/daily-tasks/scoreboard', async (req, res) => {
     try {
-        const scoreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
-        if (scoreboardData.length === 0) {
-            return res.status(404).json({ message: 'No scoreboard data found' });
-        }
+        // const scoreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
+        // if (scoreboardData.length === 0) {
+        //     return res.status(404).json({ message: 'No scoreboard data found' });
+        // }
+        const getScore = await downloadData('download');
+        const scoreboardData = getScore && getScore.data ? getScore.data : [];
         const rankedData = await rankPlayers(scoreboardData);
         res.status(200).json({ scoreData: rankedData, ok: true });
     } catch (error) {
@@ -184,28 +187,45 @@ app.get('/api/daily-tasks/scoreboard', async (req, res) => {
 });
 
 app.get('/api/download-score', async (req, res) => {
-    const getsocreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
+    // const getsocreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
     console.log('get all scoreboard data');
-    const upload = await uploadData(getsocreboardData, 'upload');
+    const upload = await downloadData('download');
     res.status(200).json({ message: 'Uploaded to S3', ok: true, upload });
 });
 
-function rankPlayers(players) {
-    // Sort players
-    return [...players].sort((a, b) => {
-        const totalA = a.mcqscore + a.totalNumberSolved;
-        const totalB = b.mcqscore + b.totalNumberSolved;
-
-        // 1. Sort by total solved (desc)
-        if (totalA !== totalB) {
-            return totalB - totalA;
-        }
-
-        // 2. If solved same → sort by time (asc, lower is better)
-        return a.totalInSeconds - b.totalInSeconds;
-    });
+function convertTimeToSeconds(timeStr) {
+    // Convert "0:22" → 22, "1:05" → 65
+    const [min, sec] = timeStr.split(':').map(Number);
+    return min * 60 + sec;
 }
 
+function rankPlayers(players) {
+    // First, map to ensure each player has totalInSeconds calculated
+    const updatedPlayers = players.map(player => ({
+        ...player,
+        totalInSeconds: convertTimeToSeconds(player.totalTime),
+        totalScore: player.mcqScore + player.numberBowlingScore
+    }));
+
+    // Sort players
+    const sorted = [...updatedPlayers].sort((a, b) => {
+        // 1️⃣ Sort by total score (descending)
+        if (b.totalScore !== a.totalScore) {
+            return b.totalScore - a.totalScore;
+        }
+
+        // 2️⃣ If total score is same → sort by time (ascending)
+        return a.totalInSeconds - b.totalInSeconds;
+    });
+
+    // Optional: Add rank numbers
+    return sorted.map((player, index) => ({
+        ...player,
+        rank: index + 1
+    }));
+}
+
+// Endpoint to submit daily tasks
 app.post('/api/submit/daily-tasks', async (req, res) => {
     const response = req.body;
     const findEmail = await client.db("E-Learning").collection("users").findOne({ name: response.userName });
@@ -214,6 +234,9 @@ app.post('/api/submit/daily-tasks', async (req, res) => {
     }
     response.userEmail = findEmail.email;
     try {
+        await client.db("E-Learning").collection("daily-tasks").insertOne(response);
+        const getScoreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
+        await uploadData(getScoreboardData, 'upload');
         console.log("Daily tasks submitted successfully");
     } catch (error) {
         console.error("Error submitting daily tasks:", error);

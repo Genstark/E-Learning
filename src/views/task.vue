@@ -234,9 +234,9 @@ async function submitAnswer() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    mcqScore: score.value,
-                    numberBowlingScore: totalSolvedNumber.value,
-                    totalScore: score.value + totalSolvedNumber.value,
+                    mcqScore: Number(score.value),
+                    numberBowlingScore: Number(totalSolvedNumber.value),
+                    totalScore: Number(score.value + totalSolvedNumber.value),
                     totalTime: formatTime(totalGameTime.value),
                     userName: localStorage.getItem('user'),
                     submissionDate: new Date().toISOString().slice(0, 10),
