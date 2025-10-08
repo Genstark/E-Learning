@@ -274,14 +274,14 @@ let job = cron.schedule("* * * * * *", async () => {
     }
 });
 
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port http://localhost:${PORT}`);
+app.listen(port, () => {
+    console.log(`Server is running on port http://localhost:${port}`);
 });
 
 const canRunNgrok = false; // Set to true if you want to run ngrok
 if (canRunNgrok) {
-    ngrok.connect({ addr: PORT, authtoken: process.env.NGROK })
+    ngrok.connect({ addr: port, authtoken: process.env.NGROK })
         .then(listener => console.log(`Ingress established at: ${listener.url()}`));
 }
