@@ -11,6 +11,7 @@ const ngrok = require('@ngrok/ngrok');
 const cron = require('node-cron');
 const googleAPI = require('./utils/googleAPI');
 const { encryptToken, decryptToken } = require('./utils/Encryption');
+const { uploadData, downloadData } = require('./utils/uploadingData');
 require('dotenv').config();
 
 const app = express();
@@ -44,7 +45,7 @@ async function authenticateToken(req, res, next) {
     }
 
     try {
-        const decodedToken = await decryptToken({action:'decrpyt', token});
+        const decodedToken = await decryptToken({ action: 'decrpyt', token });
         const decoded = jwt.verify(decodedToken, SECRET_KEY);
         req.user = decoded;
         next();
@@ -66,7 +67,7 @@ client.connect().then(async () => {
     console.error("Failed to connect:", err);
 });
 
-app.get('/api/validate-token', authenticateToken, (req, res) => { 
+app.get('/api/validate-token', authenticateToken, (req, res) => {
     try {
         if (!req.user) {
             console.log("Token is invalid");
@@ -81,7 +82,7 @@ app.get('/api/validate-token', authenticateToken, (req, res) => {
 });
 
 
-app.post('/api/signup', async (req, res) => { 
+app.post('/api/signup', async (req, res) => {
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
         return res.status(400).json({ error: 'All fields are required' });
@@ -106,8 +107,6 @@ app.post('/api/signup', async (req, res) => {
         return res.status(500).json({ error: 'Internal server error' });
     }
 
-    // const hashedName = await bcrypt.hash(name, 10);
-    // const hashedEmail = await bcrypt.hash(email, 10);
     const hashedPassword = await bcrypt.hash(password, 10);
     try {
         await client.db("E-Learning").collection("users").insertOne({
@@ -123,7 +122,7 @@ app.post('/api/signup', async (req, res) => {
     }
 });
 
-app.post('/api/login', async (req, res) => { 
+app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
         return res.status(400).json({ error: 'All fields are required' });
@@ -145,23 +144,24 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-app.get('/api/repeat-check/:user', async (req, res) => { 
+// Check if user already submitted daily tasks
+app.get('/api/repeat-check/:user', async (req, res) => {
     try {
         const scoreboardData = await client.db("E-Learning").collection("daily-tasks").findOne({ userName: req.params.user });
-        console.log(scoreboardData);
-        if(scoreboardData){
+        if (scoreboardData) {
             return res.status(200).json({ message: 'player found', ok: true, user: req.user, data: scoreboardData });
         }
-        else{
+        else {
             return res.status(200).json({ message: 'player not found', ok: false });
         }
     }
     catch (error) {
-        return res.status(500).json({ error: 'Internal server error', ok: false });
+        res.status(500).json({ error: 'Internal server error', ok: false });
     }
 });
 
-app.get('/api/roll-dice', async (req, res) => { 
+// Get dice roll and questions
+app.get('/api/roll-dice', async (req, res) => {
     try {
         // console.log(questions);
         res.status(200).json({ result: rolldicenumber, 'questions': questions });
@@ -170,36 +170,63 @@ app.get('/api/roll-dice', async (req, res) => {
     }
 });
 
-app.get('/api/daily-tasks/scoreboard', async (req, res) => { 
+// Get scoreboard data
+app.get('/api/daily-tasks/scoreboard', async (req, res) => {
     try {
-        const scoreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
-        if (scoreboardData.length === 0) {
-            return res.status(404).json({ message: 'No scoreboard data found' });
-        }
+        // const scoreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
+        // if (scoreboardData.length === 0) {
+        //     return res.status(404).json({ message: 'No scoreboard data found' });
+        // }
+        const getScore = await downloadData('download');
+        const scoreboardData = getScore && getScore.data ? getScore.data : [];
         const rankedData = await rankPlayers(scoreboardData);
-        res.status(200).json({scoreData: rankedData, ok: true});
+        res.status(200).json({ scoreData: rankedData, ok: true });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-function rankPlayers(players) {
-    // Sort players
-    return [...players].sort((a, b) => {
-        const totalA = a.mcqscore + a.totalNumberSolved;
-        const totalB = b.mcqscore + b.totalNumberSolved;
+app.get('/api/download-score', async (req, res) => {
+    // const getsocreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
+    console.log('get all scoreboard data');
+    const upload = await downloadData('download');
+    res.status(200).json({ message: 'Uploaded to S3', ok: true, upload });
+});
 
-        // 1. Sort by total solved (desc)
-        if (totalA !== totalB) {
-            return totalB - totalA;
-        }
-
-        // 2. If solved same → sort by time (asc, lower is better)
-        return a.totalInSeconds - b.totalInSeconds;
-    });
+function convertTimeToSeconds(timeStr) {
+    // Convert "0:22" → 22, "1:05" → 65
+    const [min, sec] = timeStr.split(':').map(Number);
+    return min * 60 + sec;
 }
 
-app.post('/api/submit/daily-tasks', async (req, res) => { 
+function rankPlayers(players) {
+    // First, map to ensure each player has totalInSeconds calculated
+    const updatedPlayers = players.map(player => ({
+        ...player,
+        totalInSeconds: convertTimeToSeconds(player.totalTime),
+        totalScore: player.mcqScore + player.numberBowlingScore
+    }));
+
+    // Sort players
+    const sorted = [...updatedPlayers].sort((a, b) => {
+        // 1️⃣ Sort by total score (descending)
+        if (b.totalScore !== a.totalScore) {
+            return b.totalScore - a.totalScore;
+        }
+
+        // 2️⃣ If total score is same → sort by time (ascending)
+        return a.totalInSeconds - b.totalInSeconds;
+    });
+
+    // Optional: Add rank numbers
+    return sorted.map((player, index) => ({
+        ...player,
+        rank: index + 1
+    }));
+}
+
+// Endpoint to submit daily tasks
+app.post('/api/submit/daily-tasks', async (req, res) => {
     const response = req.body;
     const findEmail = await client.db("E-Learning").collection("users").findOne({ name: response.userName });
     if (!findEmail) {
@@ -208,6 +235,8 @@ app.post('/api/submit/daily-tasks', async (req, res) => {
     response.userEmail = findEmail.email;
     try {
         await client.db("E-Learning").collection("daily-tasks").insertOne(response);
+        const getScoreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
+        await uploadData(getScoreboardData, 'upload');
         console.log("Daily tasks submitted successfully");
     } catch (error) {
         console.error("Error submitting daily tasks:", error);
@@ -223,7 +252,7 @@ app.get(/.*/, (req, res) => {
 let job = cron.schedule("* * * * * *", async () => {
     if (!SECRET_KEY) {
         SECRET_KEY = generateSecretKey();
-        console.info("Generated new SECRET_KEY");
+        console.log("Generated new SECRET_KEY");
     }
     if (rolldicenumber.length == 0 && questions.length == 0) {
         console.log("Running initial fetch for dice and questions");
@@ -231,9 +260,9 @@ let job = cron.schedule("* * * * * *", async () => {
         questions = await googleAPI.generateText("generate most tough and tough questions scientific");
         console.log('Questions and dice fetched');
     }
-    // Agar dice me number aa gaya (length > 0) to per minute schedule par switch kar do
+
     if (rolldicenumber.length > 0 && questions.length > 0) {
-        job.stop(); // pehle job band karo
+        job.stop();
         job = cron.schedule("0 0 * * *", async () => {
             rolldicenumber = await rollDice();
             questions = await googleAPI.generateText("generate most tough and tough questions scientific");

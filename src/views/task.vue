@@ -21,12 +21,12 @@ onBeforeMount(async () => {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
     });
-    const data = await response.json()
+    const data = await response.json();
     console.log(data);
     if (data.ok) {
         console.warn('Already Done');
-        router.push({ name: 'user-home', params: { id: localStorage.getItem('user') } });
-        pending.value = false;
+        // router.push({ name: 'user-home', params: { id: localStorage.getItem('user') } });
+        pending.value = true;
     }
     else {
         pending.value = true;
@@ -86,6 +86,7 @@ const totalSolvedNumber = ref(0);
 // Safe computed properties
 const currentQuestion = computed(() => {
     if (Array.isArray(questions.value) && questions.value[currentQuestionIndex.value]) {
+        console.log('Current Question:', questions.value[currentQuestionIndex.value]);
         return questions.value[currentQuestionIndex.value];
     }
     return null;
@@ -233,12 +234,12 @@ async function submitAnswer() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    mcqScore: score.value,
-                    totalNumberSolved: totalSolvedNumber.value,
-                    totalInSeconds: totalGameTime.value,
+                    mcqScore: Number(score.value),
+                    numberBowlingScore: Number(totalSolvedNumber.value),
+                    totalScore: Number(score.value + totalSolvedNumber.value),
                     totalTime: formatTime(totalGameTime.value),
                     userName: localStorage.getItem('user'),
-                    date: new Date().toISOString().slice(0, 10),
+                    submissionDate: new Date().toISOString().slice(0, 10),
                 })
             });
 
@@ -300,157 +301,155 @@ function endGame() {
 </script>
 
 <template>
-    <div v-if="!pending">
-        <div>
-            <Header />
-            <div class="min-h-screen bg-gray-100 p-4">
-                <div class="max-w-6xl mx-auto grid grid-cols-1 gap-8">
+    <div v-if="true">
+        <Header />
+        <div class="min-h-screen bg-gray-100 p-4">
+            <div class="max-w-6xl mx-auto grid grid-cols-1 gap-8">
 
-                    <!-- Number Bowling Container -->
-                    <div class="bg-white rounded-xl shadow-2xl p-6 transition-all duration-300 flex flex-col items-center"
-                        :class="{ 'opacity-50': bowlingComplete }">
-                        <h2 class="text-2xl font-semibold text-indigo-700 mb-6 flex items-center gap-2">
-                            🎲 Number Bowling
-                        </h2>
+                <!-- Number Bowling Container -->
+                <div class="bg-white rounded-xl shadow-2xl p-6 transition-all duration-300 flex flex-col items-center"
+                    :class="{ 'opacity-50': bowlingComplete }">
+                    <h2 class="text-2xl font-semibold text-indigo-700 mb-6 flex items-center gap-2">
+                        🎲 Number Bowling
+                    </h2>
 
-                        <!-- Dice -->
-                        <div v-memo="[dice]" class="flex justify-center space-x-4 mb-6">
-                            <div v-for="(d, i) in dice" :key="i" :class="{ 'animate-dice-roll': animatingDice }"
-                                class="w-16 h-16 rounded-xl bg-purple-100 text-purple-800 border-2 border-purple-500 text-3xl font-bold flex items-center justify-center shadow-xl hover:scale-105 transition-transform">
-                                {{ d }}
-                            </div>
+                    <!-- Dice -->
+                    <div v-memo="[dice]" class="flex justify-center space-x-4 mb-6">
+                        <div v-for="(d, i) in dice" :key="i" :class="{ 'animate-dice-roll': animatingDice }"
+                            class="w-16 h-16 rounded-xl bg-purple-100 text-purple-800 border-2 border-purple-500 text-3xl font-bold flex items-center justify-center shadow-xl hover:scale-105 transition-transform">
+                            {{ d }}
                         </div>
-
-                        <!-- Targets -->
-                        <div class="grid grid-cols-5 gap-3 mb-6">
-                            <div v-for="num in targetNumbers" :key="num.value" :class="[
-                                'w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold transition-all',
-                                num.disabled
-                                    ? 'bg-gray-300 text-gray-500 line-through scale-95 animate-cleared-target'
-                                    : 'bg-purple-100 text-purple-800 border border-purple-400 hover:bg-purple-200 hover:scale-105'
-                            ]">
-                                {{ num.value }}
-                            </div>
-                        </div>
-
-                        <!-- Input -->
-                        <input type="text" v-model="userInput" placeholder="e.g. (6+6)/3"
-                            @keyup.enter.prevent="validateExpression" :disabled="bowlingComplete"
-                            class="w-full px-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-purple-400 text-center text-base mb-4 shadow-sm disabled:opacity-50" />
-
-                        <!-- Submit Button -->
-                        <div class="flex space-x-4">
-                            <button @click="startGame" :disabled="gameStarted"
-                                class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md shadow">
-                                {{ gameStarted ? '🎲 Game Started' : '▶️ Start' }}
-                            </button>
-                            <button @click="endGame" :disabled="!gameStarted" :class="{ 'opacity-50': !gameStarted }"
-                                class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md shadow">
-                                ⏹️ End Game
-                            </button>
-                        </div>
-
-                        <!-- Message -->
-                        <p class="text-sm text-gray-600 italic mb-2">{{ message }}</p>
                     </div>
 
-                    <!-- Question Answer Container -->
-                    <div class="bg-white rounded-xl shadow-2xl p-6 transition-all duration-300 flex flex-col items-center relative"
-                        :class="{ 'opacity-50': !bowlingComplete }">
-                        <div v-if="!bowlingComplete"
-                            class="absolute inset-0 bg-gray-100 bg-opacity-75 rounded-xl flex items-center justify-center z-10">
-                            <div class="text-center p-4">
-                                <div class="text-4xl mb-2">🔒</div>
-                                <h3 class="text-lg font-semibold text-gray-700 mb-2">MCQ Questions Locked</h3>
-                                <p class="text-gray-600 font-semibold">Complete the bowling game to unlock MCQ questions</p>
-                                <p class="text-sm text-gray-500 mt-2 font-semibold">Progress: {{ usedTargets }}/10 numbers
-                                    cleared</p>
-                            </div>
+                    <!-- Targets -->
+                    <div class="grid grid-cols-5 gap-3 mb-6">
+                        <div v-for="num in targetNumbers" :key="num.value" :class="[
+                            'w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold transition-all',
+                            num.disabled
+                                ? 'bg-gray-300 text-gray-500 line-through scale-95 animate-cleared-target'
+                                : 'bg-purple-100 text-purple-800 border border-purple-400 hover:bg-purple-200 hover:scale-105'
+                        ]">
+                            {{ num.value }}
                         </div>
+                    </div>
 
-                        <h2 class="text-2xl font-semibold text-indigo-700 mb-6 flex items-center gap-2">
-                            ❓ MCQ Questions
-                        </h2>
+                    <!-- Input -->
+                    <input type="text" v-model="userInput" placeholder="e.g. (6+6)/3"
+                        @keyup.enter.prevent="validateExpression" :disabled="bowlingComplete"
+                        class="w-full px-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-purple-400 text-center text-base mb-4 shadow-sm disabled:opacity-50" />
 
-                        <!-- Question Display -->
-                        <div v-if="currentQuestion" class="w-full mb-6">
-                            <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-3">
-                                    Question {{ currentQuestionIndex + 1 }} of {{ questionsCount }}
-                                </h3>
-                                <p class="text-gray-700 mb-4">{{ currentQuestion.question }}</p>
+                    <!-- Submit Button -->
+                    <div class="flex space-x-4">
+                        <button @click="startGame" :disabled="gameStarted"
+                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md shadow">
+                            {{ gameStarted ? '🎲 Game Started' : '▶️ Start' }}
+                        </button>
+                        <button @click="endGame" :disabled="!gameStarted" :class="{ 'opacity-50': !gameStarted }"
+                            class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md shadow">
+                            ⏹️ End Game
+                        </button>
+                    </div>
 
-                                <!-- Options -->
-                                <div class="space-y-2">
-                                    <div v-for="(option, index) in currentQuestion.options" :key="index"
-                                        class="flex items-center">
-                                        <input type="radio" :id="'option' + index" :name="'question' + currentQuestionIndex"
-                                            :value="index" v-model="selectedAnswer" :disabled="!bowlingComplete"
-                                            class="mr-3 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50">
-                                        <label :for="'option' + index" :class="[
-                                            bowlingComplete ? 'text-gray-700 cursor-pointer hover:text-indigo-600' : 'text-gray-400 cursor-not-allowed'
-                                        ]">
-                                            {{ option }}
-                                        </label>
-                                    </div>
+                    <!-- Message -->
+                    <p class="text-sm text-gray-600 italic mb-2">{{ message }}</p>
+                </div>
+
+                <!-- Question Answer Container -->
+                <div class="bg-white rounded-xl shadow-2xl p-6 transition-all duration-300 flex flex-col items-center relative"
+                    :class="{ 'opacity-50': !bowlingComplete }">
+                    <div v-if="!bowlingComplete"
+                        class="absolute inset-0 bg-gray-100 bg-opacity-75 rounded-xl flex items-center justify-center z-10">
+                        <div class="text-center p-4">
+                            <div class="text-4xl mb-2">🔒</div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-2">MCQ Questions Locked</h3>
+                            <p class="text-gray-600 font-semibold">Complete the bowling game to unlock MCQ questions</p>
+                            <p class="text-sm text-gray-500 mt-2 font-semibold">Progress: {{ usedTargets }}/10 numbers
+                                cleared</p>
+                        </div>
+                    </div>
+
+                    <h2 class="text-2xl font-semibold text-indigo-700 mb-6 flex items-center gap-2">
+                        ❓ MCQ Questions
+                    </h2>
+
+                    <!-- Question Display -->
+                    <div v-if="currentQuestion" class="w-full mb-6">
+                        <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">
+                                Question {{ currentQuestionIndex + 1 }} of {{ questionsCount }}
+                            </h3>
+                            <p class="text-gray-700 mb-4">{{ currentQuestion.question }}</p>
+
+                            <!-- Options -->
+                            <div class="space-y-2">
+                                <div v-for="(option, index) in currentQuestion.options" :key="index"
+                                    class="flex items-center">
+                                    <input type="radio" :id="'option' + index" :name="'question' + currentQuestionIndex"
+                                        :value="index" v-model="selectedAnswer" :disabled="!bowlingComplete"
+                                        class="mr-3 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50">
+                                    <label :for="'option' + index" :class="[
+                                        bowlingComplete ? 'text-gray-700 cursor-pointer hover:text-indigo-600' : 'text-gray-400 cursor-not-allowed'
+                                    ]">
+                                        {{ option }}
+                                    </label>
                                 </div>
                             </div>
-
-                            <!-- Submit Answer Button -->
-                            <button @click="submitAnswer" :disabled="selectedAnswer === null"
-                                class="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md shadow transition-colors">
-                                Submit Answer
-                            </button>
-
-                            <!-- Feedback -->
-                            <div v-if="answerFeedback" class="mt-4 p-3 rounded-md"
-                                :class="answerFeedback.correct ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-                                {{ answerFeedback.message }}
-                            </div>
                         </div>
 
-                        <!-- Timer and Bowling Progress -->
-                        <div class="w-full flex justify-between text-sm text-gray-700 mt-4">
-                            <p>🕒 Time: {{ formatTime(elapsedTime) }}</p>
-                            <p>✅ Cleared: {{ totalSolvedNumber }} / 10</p>
-                        </div>
+                        <!-- Submit Answer Button -->
+                        <button @click="submitAnswer" :disabled="selectedAnswer === null"
+                            class="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md shadow transition-colors">
+                            Submit Answer
+                        </button>
 
-                        <!-- Navigation to E-Library -->
-                        <div class="w-full mt-6 p-4 bg-blue-50 rounded-lg">
-                            <h3 class="text-lg font-semibold text-blue-800 mb-2">Need Help?</h3>
-                            <p class="text-blue-700 mb-4">Find answers in our e-library</p>
-                            <!-- E-Library Button -->
-                            <button @click="goToELibrary" :disabled="!bowlingComplete" :class="[
-                                bowlingComplete
-                                    ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
-                                    : 'bg-gray-400 cursor-not-allowed'
-                            ]"
-                                class="w-full text-white font-medium py-3 px-4 rounded-md shadow flex items-center justify-center gap-2 transition-colors">
-                                <span>Go to E-Library</span>
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14">
-                                    </path>
-                                </svg>
-                            </button>
-                        </div>
-
-                        <!-- Score and Total Time -->
-                        <div class="w-full mt-4 text-center">
-                            <p class="text-sm text-gray-600">
-                                MCQ Score: {{ score }} / {{ questionsCount }}
-                            </p>
-                            <p v-if="totalGameTime > 0" class="text-sm font-semibold text-indigo-700 mt-2">
-                                Total Game Time: {{ Math.floor(totalGameTime / 60) }}:{{ String(totalGameTime %
-                                    60).padStart(2, '0') }}
-                            </p>
+                        <!-- Feedback -->
+                        <div v-if="answerFeedback" class="mt-4 p-3 rounded-md"
+                            :class="answerFeedback.correct ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                            {{ answerFeedback.message }}
                         </div>
                     </div>
 
+                    <!-- Timer and Bowling Progress -->
+                    <div class="w-full flex justify-between text-sm text-gray-700 mt-4">
+                        <p>🕒 Time: {{ formatTime(elapsedTime) }}</p>
+                        <p>✅ Cleared: {{ totalSolvedNumber }} / 10</p>
+                    </div>
+
+                    <!-- Navigation to E-Library -->
+                    <div class="w-full mt-6 p-4 bg-blue-50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-blue-800 mb-2">Need Help?</h3>
+                        <p class="text-blue-700 mb-4">Find answers in our e-library</p>
+                        <!-- E-Library Button -->
+                        <button @click="goToELibrary" :disabled="!bowlingComplete" :class="[
+                            bowlingComplete
+                                ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                                : 'bg-gray-400 cursor-not-allowed'
+                        ]"
+                            class="w-full text-white font-medium py-3 px-4 rounded-md shadow flex items-center justify-center gap-2 transition-colors">
+                            <span>Go to E-Library</span>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14">
+                                </path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Score and Total Time -->
+                    <div class="w-full mt-4 text-center">
+                        <p class="text-sm text-gray-600">
+                            MCQ Score: {{ score }} / {{ questionsCount }}
+                        </p>
+                        <p v-if="totalGameTime > 0" class="text-sm font-semibold text-indigo-700 mt-2">
+                            Total Game Time: {{ Math.floor(totalGameTime / 60) }}:{{ String(totalGameTime %
+                                60).padStart(2, '0') }}
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+    <div v-else></div>
 </template>
 
 <style scoped></style>

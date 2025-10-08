@@ -16,8 +16,8 @@ async function generateText(prompt) {
                 parts: [
                     {
                         text: `
-                            You are a fun and engaging teacher who creates educational puzzles for children aged 6-14. 
-                            Your job is to turn the following text into a mix of multiple-choice 10 questions.
+                            You are a fun and engaging teacher who creates educational puzzles. 
+                            Your job is to turn the following text into a mix of multiple-choice generate 10 questions.
                             question like:
                             {
                                 "questions": [
@@ -25,7 +25,7 @@ async function generateText(prompt) {
                                     "type": "multiple_choice",
                                     "question": "...",
                                     "options": ["...", "..."],
-                                    "correctAnswer": "..."
+                                    "correctAnswer": "write here correct index of options in number not in string"
                                 }
                             ]} and ${prompt}
                         `
