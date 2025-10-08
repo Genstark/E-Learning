@@ -20,6 +20,7 @@ async function handleLogin() {
 
 	isLoading.value = true; // start loading
 	try {
+		console.log('Attempting login with:', process.env.VUE_APP_URL);
 		const response = await fetch(`${process.env.VUE_APP_URL}/login`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -60,6 +61,7 @@ onUnmounted(() => {
 	<div class="min-h-screen flex items-center justify-center bg-gray-100">
 		<div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md"
 			:class="{ 'cursor-not-allowed opacity-50': isLoading }">
+			<!-- <h2 class="text-2xl font-bold mb-6">Log In</h2> -->
 			<form @submit.prevent="handleLogin" class="space-y-4">
 				<input type="email" v-model="email" placeholder="Email"
 					class="w-full px-4 py-2 border rounded-md focus:ring focus:ring-primary-200" />
