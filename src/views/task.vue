@@ -2,6 +2,7 @@
 <script setup>
 import { ref, computed, watch, onUnmounted, onBeforeMount } from 'vue';
 import Header from '@/components/Header.vue';
+import Footer from '@/components/Footer.vue';
 import { evaluate } from "mathjs";
 import { useRouter } from 'vue-router';
 
@@ -450,6 +451,7 @@ function endGame() {
         </div>
     </div>
     <div v-else></div>
+    <Footer />
 </template>
 
 <style scoped></style>

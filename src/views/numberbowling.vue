@@ -3,6 +3,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import Header from '@/components/Header.vue';
+import Footer from '@/components/Footer.vue';
 import { evaluate } from 'mathjs';
 import { onUnmounted } from 'vue';
 
@@ -181,7 +182,7 @@ function stop() {
         clearInterval(penaltyInterval);
         penaltyInterval = null;
     }
-    startTime.value = null; // ✅ ye line add karo
+    startTime.value = null;
     message.value = 'Game stopped. You can reset to start a new game.';
 }
 </script>
@@ -338,6 +339,7 @@ function stop() {
             <span>Tip: Use all dice creatively. Fastest wins!</span>
         </div>
     </div>
+    <Footer />
 </template>
 
 <style scoped></style>

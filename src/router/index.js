@@ -98,7 +98,6 @@ router.beforeEach(async (to, from, next) => {
                 Authorization: `Bearer ${token}`,
             },
             method: 'GET',
-            // agar aap cookie based token bhi bhejna chahte ho:
             credentials: 'include'
         });
 
@@ -109,11 +108,8 @@ router.beforeEach(async (to, from, next) => {
             return next();
         } else {
             console.log('❌ Token invalid, cleaning up...');
-
-            // 🔹 LocalStorage se remove karo
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            // 🔹 Cookies se delete karo
             document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
             if (to.path !== '/login') {
