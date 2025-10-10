@@ -1,6 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
 import Header from '@/components/Header.vue';
+import Footer from '@/components/Footer.vue';
 import { onUnmounted, onMounted, ref } from 'vue';
 
 const scores = ref([]);
@@ -44,12 +45,13 @@ onUnmounted(() => {
                         <td class="px-4 py-3 text-sm text-center text-gray-700">{{ item.numberBowlingScore }}</td>
                         <td class="px-4 py-3 text-sm text-center text-gray-700">{{ item.mcqScore }}</td>
                         <td class="px-4 py-3 text-sm text-center text-gray-700 font-medium">{{ item.totalScore }}</td>
-                        <td class="px-4 py-3 text-sm text-center text-gray-700">{{ item.totalTime }}</td>   
+                        <td class="px-4 py-3 text-sm text-center text-gray-700">{{ item.totalTime }}</td>
                     </tr>
                 </tbody>
             </table>
         </div>
     </div>
+    <Footer />
 </template>
 
 <style scoped></style>

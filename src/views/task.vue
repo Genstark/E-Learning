@@ -2,6 +2,7 @@
 <script setup>
 import { ref, computed, watch, onUnmounted, onBeforeMount } from 'vue';
 import Header from '@/components/Header.vue';
+import Footer from '@/components/Footer.vue';
 import { evaluate } from "mathjs";
 import { useRouter } from 'vue-router';
 
@@ -315,7 +316,7 @@ function endGame() {
 
                     <!-- Dice -->
                     <div v-memo="[dice]" class="flex justify-center space-x-4 mb-6">
-                        <div v-for="(d, i) in dice" :key="i" :class="{ 'animate-dice-roll': animatingDice }"
+                        <div v-for="(d, i) in dice" :key="i" :class="{ 'animate-dice-roll': animatingDice }"    
                             class="w-16 h-16 rounded-xl bg-purple-100 text-purple-800 border-2 border-purple-500 text-3xl font-bold flex items-center justify-center shadow-xl hover:scale-105 transition-transform">
                             {{ d }}
                         </div>
@@ -450,6 +451,7 @@ function endGame() {
         </div>
     </div>
     <div v-else></div>
+    <Footer />
 </template>
 
 <style scoped></style>
