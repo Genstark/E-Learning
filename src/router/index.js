@@ -48,6 +48,11 @@ const routes = [
         name: 'profile-id',
         component: () => import('../views/profile.vue')
     },
+    {
+        path: '/reset-password',
+        name: 'reset-password',
+        component: () => import('../views/reset-password.vue')
+    }
 ];
 
 const router = createRouter({
@@ -70,8 +75,8 @@ router.beforeEach(async (to, from, next) => {
     console.log('🍪 Token from cookies:', getCookie('token'));
     console.log('🔑 Current token:', token);
 
-    // Agar user login page par ja raha hai, guard skip karo
-    if (to.path === '/login') {
+    // Agar user login, signup, reset page par ja raha hai, guard skip karo
+    if (to.path === '/login' || to.path === '/signup' || to.path === '/reset-password') {
         console.log('✅ Skipping guard for login page');
         return next();
     }

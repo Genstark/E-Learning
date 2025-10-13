@@ -1,10 +1,10 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup></script>
 <template>
-    <footer class="bg-gray-800 text-white py-4 mt-auto">
+    <footer class="bg-gray-800 text-white py-4 fixed bottom-0 left-0 w-full">
         <div class="container mx-auto text-center">
             <!-- <p>&copy; 2024 Your Company. All rights reserved.</p> -->
-            <p>Join Group</p>
+            <p class="cursor-default select-none">Join Group</p>
             <!-- <div class="flex justify-center space-x-4 mt-2">
                 <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook"
                     class="hover:text-blue-500 transition-colors duration-200">

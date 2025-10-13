@@ -12,6 +12,8 @@ const cron = require('node-cron');
 const googleAPI = require('./utils/googleAPI');
 const { encryptToken, decryptToken } = require('./utils/Encryption');
 const { uploadData, downloadData } = require('./utils/uploadingData');
+const { re } = require('mathjs');
+const { hash } = require('crypto');
 require('dotenv').config();
 
 const app = express();
@@ -81,6 +83,33 @@ app.get('/api/validate-token', authenticateToken, (req, res) => {
     }
 });
 
+app.post('/api/reset-password', async (req, res) => {
+    if (req.body.task === 'confirmation'){
+        const { userEmail, userName } = req.body;
+        const findEmail = await client.db("E-Learning").collection("users").findOne({ email: userEmail });
+        const findName = await client.db("E-Learning").collection("users").findOne({ name: userName });
+        if (!findEmail || !findName || findEmail.email !== findName.email) {
+            return res.status(400).json({ error: 'User not found', ok: false });
+        }
+        res.status(200).json({ message: 'got the message', ok: true, userEmail: findEmail.email, userName: findName.name });
+    }
+
+    if (req.body.task === 'resetPassword'){
+        const { userEmail, confirmPassword } = req.body;
+        const hashedPassword = await bcrypt.hash(confirmPassword, 10);
+        console.log('Resetting password for:', hashedPassword);
+        try {
+            await client.db("E-Learning").collection("users").updateOne(
+                { email: userEmail },
+                { $set: { password: hashedPassword } }
+            );
+            res.status(200).json({ message: 'Password reset successfully', ok: true });
+        } catch (error) {
+            console.error("Error resetting password:", error);
+            res.status(500).json({ error: 'Internal server error', ok: false });
+        }
+    }
+});
 
 app.post('/api/signup', async (req, res) => {
     const { name, email, password } = req.body;
@@ -90,9 +119,7 @@ app.post('/api/signup', async (req, res) => {
 
     try {
         // Use $or to check both email and name in a single query for better performance
-        const existingUser = await client.db("E-Learning").collection("users").findOne({
-            $or: [{ email }, { name }]
-        });
+        const existingUser = await client.db("E-Learning").collection("users").findOne({$or: [{ email }, { name }]});
 
         if (existingUser) {
             if (existingUser.email === email) {
@@ -133,6 +160,7 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
         if (await bcrypt.compare(password, user.password)) {
+            await console.log(bcrypt.compare(password, user.password));
             let token = jwt.sign({ email: user.email, username: user.name }, SECRET_KEY, { expiresIn: '23h' });
             token = await encryptToken({ action: 'encrypt', token });
             res.cookie('token', token, { httpOnly: false, secure: true, sameSite: "Strict", maxAge: 23 * 60 * 60 * 1000 });

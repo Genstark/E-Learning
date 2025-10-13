@@ -68,6 +68,11 @@ onUnmounted(() => {
 				<input type="password" v-model="password" placeholder="Password"
 					class="w-full px-4 py-2 border rounded-md focus:ring focus:ring-primary-200" />
 
+				<p class="text-sm mt-4">
+					Forget your password?
+					<router-link to="/reset-password" class="text-primary-600 hover:underline">reset password</router-link>
+				</p>
+
 				<!-- Button -->
 				<button type="submit" :disabled="isLoading"
 					class="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 rounded-md flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed">
@@ -83,7 +88,7 @@ onUnmounted(() => {
 				</button>
 			</form>
 
-			<p class="text-sm mt-4 text-center">
+			<p class="text-sm mt-4">
 				Don't have an account?
 				<router-link to="/signup" class="text-primary-600 hover:underline">Sign Up</router-link>
 			</p>
