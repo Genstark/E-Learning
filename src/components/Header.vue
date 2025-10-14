@@ -144,7 +144,7 @@ function logout() {
     </header>
 
     <!-- Accessibility Toggle -->
-    <button @click="largeText = !largeText"
+    <button @click="largeText = !largeText" v-if="false"
         class="fixed bottom-4 right-4 bg-gray-800 text-white text-sm sm:text-base px-3 sm:px-5 py-2 sm:py-3 rounded-full shadow-lg hover:bg-gray-900">
         Toggle Large Text
     </button>

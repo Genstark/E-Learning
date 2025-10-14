@@ -48,6 +48,11 @@ const routes = [
         name: 'profile-id',
         component: () => import('../views/profile.vue')
     },
+    {
+        path: '/reset-password',
+        name: 'reset-password',
+        component: () => import('../views/reset-password.vue')
+    }
 ];
 
 const router = createRouter({
@@ -70,8 +75,8 @@ router.beforeEach(async (to, from, next) => {
     console.log('🍪 Token from cookies:', getCookie('token'));
     console.log('🔑 Current token:', token);
 
-    // Agar user login page par ja raha hai, guard skip karo
-    if (to.path === '/login') {
+    // Agar user login, signup, reset page par ja raha hai, guard skip karo
+    if (to.path === '/login' || to.path === '/signup' || to.path === '/reset-password') {
         console.log('✅ Skipping guard for login page');
         return next();
     }
@@ -98,7 +103,6 @@ router.beforeEach(async (to, from, next) => {
                 Authorization: `Bearer ${token}`,
             },
             method: 'GET',
-            // agar aap cookie based token bhi bhejna chahte ho:
             credentials: 'include'
         });
 
@@ -109,11 +113,8 @@ router.beforeEach(async (to, from, next) => {
             return next();
         } else {
             console.log('❌ Token invalid, cleaning up...');
-
-            // 🔹 LocalStorage se remove karo
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            // 🔹 Cookies se delete karo
             document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
             if (to.path !== '/login') {
