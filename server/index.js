@@ -157,7 +157,6 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
         if (await bcrypt.compare(password, user.password)) {
-            await console.log(bcrypt.compare(password, user.password));
             let token = jwt.sign({ email: user.email, username: user.name }, SECRET_KEY, { expiresIn: '23h' });
             token = await encryptToken({ action: 'encrypt', token });
             res.cookie('token', token, { httpOnly: false, secure: true, sameSite: "Strict", maxAge: 23 * 60 * 60 * 1000 });
