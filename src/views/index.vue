@@ -2,10 +2,12 @@
 <template>
     <HeaderComponent />
     <Cards :cards="cards" />
+    <Footer />
 </template>
 
 <script setup>
 import HeaderComponent from '@/components/Header.vue';
+import Footer from '@/components/Footer.vue';
 import Cards from '@/components/Cards.vue';
 import numberBowling from '../../public/images/numberBowlingGame.png';
 import { onUnmounted } from 'vue';

@@ -3,6 +3,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import Header from '@/components/Header.vue';
+import Footer from '@/components/Footer.vue';
 import { evaluate } from 'mathjs';
 import { onUnmounted } from 'vue';
 
@@ -49,7 +50,7 @@ function rollDice() {
         }, 1000);
     }
 
-    // Apply penalty if game is ongoing
+    // Apply penalty if game is already in progress (some targets cleared)
     if (startTime.value !== null && usedTargets.value > 0 && usedTargets.value < 10) {
         penaltyTime.value += 60; // ✅ add 1 min penalty
         message.value = '⚠️ 1-minute penalty added for rolling dice again!';
@@ -59,6 +60,7 @@ function rollDice() {
             }
         }, 1000);
     }
+
 
     // Roll 4 dice
     dice.value = Array.from({ length: 4 }, () => Math.floor(Math.random() * 6) + 1);
@@ -129,12 +131,10 @@ function resetGame() {
     const isGameActive = startTime.value !== null && usedTargets.value > 0 && usedTargets.value < 10;
 
     if (isGameActive) {
-        // Apply 1-minute penalty before reset
+        // penalty apply
         isPenaltyActive.value = true;
         penaltyTimeRemaining.value = 60;
-
         message.value = '⚠️ 1-minute penalty applied for reset!';
-
         penaltyInterval = setInterval(() => {
             penaltyTimeRemaining.value--;
             if (penaltyTimeRemaining.value <= 0) {
@@ -143,8 +143,7 @@ function resetGame() {
                 message.value = 'Penalty ended. You can now roll dice.';
             }
         }, 1000);
-
-        penaltyTime.value += 60; // ✅ add penalty to total time
+        penaltyTime.value += 60;
         return;
     }
 
@@ -171,6 +170,7 @@ function resetGame() {
     penaltyTime.value = 0;
     isPenaltyActive.value = false;
     penaltyTimeRemaining.value = 0;
+    localStorage.setItem("bestScores", JSON.stringify(bestScores.value));
 }
 
 function stop() {
@@ -182,6 +182,7 @@ function stop() {
         clearInterval(penaltyInterval);
         penaltyInterval = null;
     }
+    startTime.value = null;
     message.value = 'Game stopped. You can reset to start a new game.';
 }
 </script>
@@ -253,7 +254,8 @@ function stop() {
                             {{ String(elapsedTime % 60).padStart(2, '0') }}
                         </p>
                         <p v-if="penaltyTime > 0" class="text-red-600 font-bold">
-                            ⏰ Penalty Time: +{{ Math.floor(penaltyTime / 60) }}:{{ String(penaltyTime % 60).padStart(2, '0') }}
+                            ⏰ Penalty Time: +{{ Math.floor(penaltyTime / 60) }}:{{ String(penaltyTime % 60).padStart(2,
+                                '0') }}
                         </p>
                         <p>✅ Cleared: {{ usedTargets }} / 10</p>
                     </div>
@@ -279,10 +281,12 @@ function stop() {
         </div>
     </div>
     <!-- rules for number bowling -->
-    <div class="bg-gradient-to-br from-purple-50 to-indigo-100 shadow-2xl rounded-2xl p-8 mt-8 border border-indigo-200">
+    <div
+        class="bg-gradient-to-br from-purple-50 to-indigo-100 shadow-2xl rounded-2xl p-8 mt-8 border border-indigo-200">
         <div class="flex items-center mb-4 gap-2">
             <span class="text-2xl">📖</span>
-            <h3 class="text-2xl font-extrabold text-indigo-800 tracking-tight">How to Play <span class="text-purple-600">Number Bowling</span></h3>
+            <h3 class="text-2xl font-extrabold text-indigo-800 tracking-tight">How to Play <span
+                    class="text-purple-600">Number Bowling</span></h3>
         </div>
         <ol class="list-decimal list-inside space-y-3 text-gray-800 text-base leading-relaxed pl-2">
             <li>
@@ -291,11 +295,17 @@ function stop() {
             </li>
             <li>
                 <span class="font-semibold text-purple-700">Form Expressions: </span>
-                <span>Combine the dice numbers with <span class="font-mono bg-gray-100 px-1 rounded">+</span> <span class="font-mono bg-gray-100 px-1 rounded">-</span> <span class="font-mono bg-gray-100 px-1 rounded">*</span> <span class="font-mono bg-gray-100 px-1 rounded">/</span><span class="font-mono bg-gray-100 px-1 rounded">()</span> and parentheses to match a <span class="font-bold text-indigo-700">target number (1-10)</span>.</span>
+                <span>Combine the dice numbers with <span class="font-mono bg-gray-100 px-1 rounded">+</span>
+                <span class="font-mono bg-gray-100 px-1 rounded">-</span> 
+                <span class="font-mono bg-gray-100 px-1 rounded">*</span> 
+                <span class="font-mono bg-gray-100 px-1 rounded">/</span> 
+                <span class="font-mono bg-gray-100 px-1 rounded">()</span> and parentheses to match a 
+                <span class="font-bold text-indigo-700">target number (1-10)</span>.</span>
             </li>
             <li>
                 <span class="font-semibold text-purple-700">Submit: </span>
-                <span>Enter your expression and click <span class="inline-block bg-green-200 text-green-800 px-2 py-0.5 rounded font-mono text-sm">✅ Submit</span> or press <span class="font-mono bg-gray-100 px-1 rounded">Enter</span>.</span>
+                <span>Enter your expression and click 
+                    <span class="inline-block bg-green-200 text-green-800 px-2 py-0.5 rounded font-mono text-sm">✅ Submit</span> or press <span class="font-mono bg-gray-100 px-1 rounded">Enter</span>.</span>
             </li>
             <li>
                 <span class="font-semibold text-purple-700">Clear Targets: </span>
@@ -311,7 +321,8 @@ function stop() {
             </li>
             <li>
                 <span class="font-semibold text-purple-700">Controls: </span>
-                <span>Use the <span class="inline-block bg-red-200 text-red-800 px-2 py-0.5 rounded font-mono text-sm">🔄 Reset</span> button to restart anytime. The <span class="inline-block bg-gray-200 text-gray-800 px-2 py-0.5 rounded font-mono text-sm">⏹ Stop</span> button pauses the game.</span>
+                <span>Use the <span class="inline-block bg-red-200 text-red-800 px-2 py-0.5 rounded font-mono text-sm">🔄 Reset</span> button to restart anytime. The 
+                <span class="inline-block bg-gray-200 text-gray-800 px-2 py-0.5 rounded font-mono text-sm">⏹ Stop</span> button pauses the game.</span>
             </li>
         </ol>
         <div class="mt-6 flex items-center gap-2 text-indigo-700 font-semibold text-lg">
@@ -319,7 +330,7 @@ function stop() {
             <span>Tip: Use all dice creatively. Fastest wins!</span>
         </div>
     </div>
+    <Footer />
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>
