@@ -12,8 +12,6 @@ const cron = require('node-cron');
 const googleAPI = require('./utils/googleAPI');
 const { encryptToken, decryptToken } = require('./utils/Encryption');
 const { uploadData, downloadData } = require('./utils/uploadingData');
-const { re } = require('mathjs');
-const { hash } = require('crypto');
 require('dotenv').config();
 
 const app = express();
@@ -97,7 +95,6 @@ app.post('/api/reset-password', async (req, res) => {
     if (req.body.task === 'resetPassword'){
         const { userEmail, confirmPassword } = req.body;
         const hashedPassword = await bcrypt.hash(confirmPassword, 10);
-        console.log('Resetting password for:', hashedPassword);
         try {
             await client.db("E-Learning").collection("users").updateOne(
                 { email: userEmail },
@@ -160,7 +157,6 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
         if (await bcrypt.compare(password, user.password)) {
-            await console.log(bcrypt.compare(password, user.password));
             let token = jwt.sign({ email: user.email, username: user.name }, SECRET_KEY, { expiresIn: '23h' });
             token = await encryptToken({ action: 'encrypt', token });
             res.cookie('token', token, { httpOnly: false, secure: true, sameSite: "Strict", maxAge: 23 * 60 * 60 * 1000 });
