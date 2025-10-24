@@ -293,6 +293,8 @@ let job = cron.schedule("* * * * * *", async () => {
             console.log('Questions and dice fetched');
             SECRET_KEY = generateSecretKey();
             console.log("Generated new SECRET_KEY");
+            const removeOldData = await client.db("E-Learning").collection("daily-tasks").deleteMany({});
+            console.log(`Cleared old daily tasks: ${removeOldData.deletedCount} records removed`);
         });
         console.log("✅ Switched to 24-hour schedule for both dice and questions");
     }
