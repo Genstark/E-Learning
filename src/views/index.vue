@@ -10,6 +10,7 @@ import HeaderComponent from '@/components/Header.vue';
 import Footer from '@/components/Footer.vue';
 import Cards from '@/components/Cards.vue';
 import numberBowling from '../../public/images/numberBowlingGame.png';
+import taskimage from '../../public/images/green-page.jpg';
 import { onUnmounted } from 'vue';
 
 const cards = [
@@ -29,7 +30,8 @@ const cards = [
     {
         title: 'Daily Task',
         description: 'Complete the assigned tasks and quizzes.',
-        image: 'https://img.freepik.com/free-vector/online-learning-isometric-landing-page_52683-51940.jpg?w=740&T=ST=1700000000~EXP=1700000000~HMAC=zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',
+        // public/ files are copied to the project root on build — reference them from the root
+        image: taskimage,
         page: { name: 'task-id', params: { id: localStorage.getItem('user') } }
     },
 ];
