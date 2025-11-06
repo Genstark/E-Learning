@@ -67,7 +67,7 @@ client.connect().then(async () => {
     console.error("Failed to connect:", err);
 });
 
-app.get('/api/validate-token', authenticateToken, (req, res) => {
+app.get('/api/validate-token', authenticateToken, async (req, res) => {
     try {
         if (!req.user) {
             console.log("Token is invalid");
@@ -187,7 +187,9 @@ app.get('/api/repeat-check/:user', async (req, res) => {
 // Get dice roll and questions
 app.get('/api/roll-dice', async (req, res) => {
     try {
-        // console.log(questions);
+        const data = await fetch(process.env.GET-TASK-DATA);
+        const getData = await data.json();
+        console.log('Fetched dice and questions from Lambda');
         res.status(200).json({ result: rolldicenumber, 'questions': questions });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
@@ -275,13 +277,13 @@ app.get(/.*/, (req, res) => {
 
 let job = cron.schedule("* * * * * *", async () => {
     if (!SECRET_KEY) {
-        SECRET_KEY = generateSecretKey();
+        SECRET_KEY = await generateSecretKey();
         console.log("Generated new SECRET_KEY");
     }
     if (rolldicenumber.length == 0 && questions.length == 0) {
         console.log("Running initial fetch for dice and questions");
         rolldicenumber = await rollDice();
-        questions = await googleAPI.generateText("generate most tough and tough questions scientific");
+        questions = await googleAPI.generateText("generate most tough and tough scientific questions");
         console.log('Questions and dice fetched');
     }
 
@@ -289,9 +291,9 @@ let job = cron.schedule("* * * * * *", async () => {
         job.stop();
         job = cron.schedule("0 0 * * *", async () => {
             rolldicenumber = await rollDice();
-            questions = await googleAPI.generateText("generate most tough and tough questions scientific");
+            questions = await googleAPI.generateText("generate most tough and tough scientific questions");
             console.log('Questions and dice fetched');
-            SECRET_KEY = generateSecretKey();
+            SECRET_KEY = await generateSecretKey();
             console.log("Generated new SECRET_KEY");
             const removeOldData = await client.db("E-Learning").collection("daily-tasks").deleteMany({});
             console.log(`Cleared old daily tasks: ${removeOldData.deletedCount} records removed`);
@@ -306,7 +308,7 @@ app.listen(PORT, () => {
     console.log(`Server is running on port http://localhost:${PORT}`);
 });
 
-const canRunNgrok = false // Set to true if you want to run ngrok
+const canRunNgrok = false; // Set to true if you want to run ngrok
 if (canRunNgrok) {
     ngrok.connect({ addr: PORT, authtoken: process.env.NGROK })
         .then(listener => console.log(`Ingress established at: ${listener.url()}`));
