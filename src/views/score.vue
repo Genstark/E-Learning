@@ -13,7 +13,6 @@ onMounted(async () => {
     });
     const data = await response.json();
     scores.value = data.scoreData;
-    console.log(data);
 });
 
 onUnmounted(() => {

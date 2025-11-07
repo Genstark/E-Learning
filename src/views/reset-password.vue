@@ -25,7 +25,6 @@ async function checkConfirmation() {
         credentials: 'include'
     });
     const data = await response.json();
-    console.log('Response from server:', data);
     buttonConfirmation_visible.value = false;
     if (data.ok) {
         isConfirmed.value = true;
@@ -55,7 +54,6 @@ async function resetPassword() {
         credentials: 'include'
     });
     const data = await response.json();
-    console.log('Response from server:', data);
     if (data.ok) {
         alert('Password reset successful! Please log in with your new password.');
         // Redirect to login page

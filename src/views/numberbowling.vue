@@ -71,13 +71,30 @@ function rollDice() {
 }
 
 async function validateExpression() {
+    const expr = userInput.value.trim();
+
+    if (!expr) {
+        message.value = 'Please enter an expression.';
+        return;
+    }
+
+    // Reject pure single/multiple digits without any operator/parentheses
+    if (/^\d+$/.test(expr)) {
+        message.value = 'Please enter an expression using operators (e.g. (6+6)/3). Single numbers alone are not allowed.';
+        return;
+    }
+
     let result;
     try {
-        if (!/^[\d\s+\-*/().]+$/.test(userInput.value)) {
+        if (!/^[\d\s+\-*/().]+$/.test(expr)) {
             throw new Error('Invalid characters used.');
         }
-        result = evaluate(userInput.value);
-        // result = Math.round(result * 1000) / 1000;
+        result = evaluate(expr);
+        if (typeof result !== 'number' || !isFinite(result)) {
+            throw new Error('Invalid result.');
+        }
+        // Normalize small floating point rounding errors
+        if (Math.abs(result - Math.round(result)) < 1e-9) result = Math.round(result);
     } catch (err) {
         message.value = 'Invalid expression.';
         return;
@@ -89,7 +106,7 @@ async function validateExpression() {
         return;
     }
 
-    const usedNumbers = userInput.value.match(/\d+/g)?.map(Number) || [];
+    const usedNumbers = expr.match(/\d+/g)?.map(Number) || [];
     const diceCopy = [...dice.value];
     for (const num of usedNumbers) {
         const i = diceCopy.indexOf(num);

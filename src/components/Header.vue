@@ -72,7 +72,10 @@ function logout() {
                     <!-- ✅ If user is logged in -->
                     <template v-if="user">
                         <div class="flex items-center space-x-3">
-                            <span class="text-gray-700 font-medium">👤 {{ user }}</span>
+                            <button @click="router.push({ name: 'profile-id', params: { id: user } })"
+                                    class="text-gray-700 font-medium focus:outline-none">
+                                👤 {{ user }}
+                            </button>
                             <button @click="logout"
                                 class="bg-red-500 hover:bg-red-600 text-white text-sm sm:text-base font-medium px-4 py-2 rounded-md">
                                 Logout
@@ -108,13 +111,13 @@ function logout() {
             <!-- Mobile Menu -->
             <div v-if="isMobileMenuOpen" class="md:hidden space-y-4 sm:space-y-6 pb-4 sm:pb-6">
                 <nav class="flex flex-col space-y-2 sm:space-y-3">
+                    <p class="text-l sm:text-base text-gray-700 hover:text-primary-600 font-bold" @click="router.push({name:'user-home', params: { id: user }})">Home
+                        <!-- <router-link :to="`/${user}`"></router-link> -->
+                    </p>
                     <p class="text-l sm:text-base text-gray-700 hover:text-primary-600 font-bold" @click="router.push('/about')">About
                         <!-- <router-link :to="`/${user}`"></router-link> -->
                     </p>
-                    <p class="text-l sm:text-base text-gray-700 hover:text-primary-600 font-bold" @click="router.push('/explore')">
-                        Explore
-                    </p>
-                    <p class="text-l sm:text-base text-gray-700 hover:text-primary-600 font-bold" @click="router.push({name:'score-id', params: { id: user.id }})">Scores
+                    <p class="text-l sm:text-base text-gray-700 hover:text-primary-600 font-bold" @click="router.push({name:'score-id', params: { id: user }})">Scores
                         <!-- <router-link :to="user ? `/${user}/scores` : '/scores'"></router-link> -->
                     </p>
                 </nav>
@@ -122,7 +125,7 @@ function logout() {
                 <!-- ✅ If user logged in -->
                 <template v-if="user">
                     <div class="flex flex-col space-y-2 pt-3">
-                        <span class="px-3 py-2 text-gray-700 font-medium">👤 {{ user }}</span>
+                        <span class="px-3 py-2 text-gray-700 font-medium" @click="router.push({ name: 'profile-id', params: { id: user } })">👤 {{ user }}</span>
                         <button @click="logout" class="bg-red-500 text-white font-medium py-2 px-4 rounded-md">
                             Logout
                         </button>
