@@ -72,7 +72,7 @@ function logout() {
                     <!-- ✅ If user is logged in -->
                     <template v-if="user">
                         <div class="flex items-center space-x-3">
-                            <span class="text-gray-700 font-medium">👤 {{ user }}</span>
+                            <span class="text-gray-700 font-medium" @click="router.push(`/${{ user }}/profile`)">👤 {{ user }}</span>
                             <button @click="logout"
                                 class="bg-red-500 hover:bg-red-600 text-white text-sm sm:text-base font-medium px-4 py-2 rounded-md">
                                 Logout

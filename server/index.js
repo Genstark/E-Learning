@@ -8,7 +8,7 @@ const { generateSecretKey } = require('./utils/generateSecreteKey');
 const { rollDice } = require('./utils/randomRollDice');
 const path = require('path');
 const ngrok = require('@ngrok/ngrok');
-const cron = require('node-cron');
+const cron = require('node-cron'); // not required but useful for scheduling
 const googleAPI = require('./utils/googleAPI');
 const { encryptToken, decryptToken } = require('./utils/Encryption');
 const { uploadData, downloadData } = require('./utils/uploadingData');
@@ -187,11 +187,35 @@ app.get('/api/repeat-check/:user', async (req, res) => {
 // Get dice roll and questions
 app.get('/api/roll-dice', async (req, res) => {
     try {
-        const data = await fetch(process.env.GET-TASK-DATA);
-        const getData = await data.json();
-        console.log('Fetched dice and questions from Lambda');
-        res.status(200).json({ result: rolldicenumber, 'questions': questions });
+        const collectTaskData = await client.db("E-Learning").collection("daily-task-data").find().toArray();
+        const today = new Date().toISOString().slice(0, 10);
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+        const todayDoc = collectTaskData.find(d => d.date === today);
+        const yesterdayDoc = collectTaskData.find(d => d.date === yesterday);
+
+        if (todayDoc) {
+            // Use today's stored data
+            rolldicenumber = todayDoc.rolldicenumber || [];
+            questions = todayDoc.questions || [];
+        } else {
+            // If yesterday exists, remove it and generate fresh data for today
+            if (yesterdayDoc) {
+                await client.db("E-Learning").collection("daily-task-data").deleteMany({ date: yesterday });
+            }
+            // Generate new data for today and store/update it
+            rolldicenumber = await rollDice();
+            questions = await googleAPI.generateText("generate most tough and tough scientific questions");
+            await client.db("E-Learning").collection("daily-task-data").updateOne(
+                { date: today },
+                { $set: { date: today, rolldicenumber, questions } },
+                { upsert: true }
+            );
+        }
+
+        res.status(200).json({ result: rolldicenumber, questions, ok: true });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -280,23 +304,12 @@ let job = cron.schedule("* * * * * *", async () => {
         SECRET_KEY = await generateSecretKey();
         console.log("Generated new SECRET_KEY");
     }
-    if (rolldicenumber.length == 0 && questions.length == 0) {
-        console.log("Running initial fetch for dice and questions");
-        rolldicenumber = await rollDice();
-        questions = await googleAPI.generateText("generate most tough and tough scientific questions");
-        console.log('Questions and dice fetched');
-    }
 
     if (rolldicenumber.length > 0 && questions.length > 0) {
         job.stop();
         job = cron.schedule("0 0 * * *", async () => {
-            rolldicenumber = await rollDice();
-            questions = await googleAPI.generateText("generate most tough and tough scientific questions");
-            console.log('Questions and dice fetched');
             SECRET_KEY = await generateSecretKey();
             console.log("Generated new SECRET_KEY");
-            const removeOldData = await client.db("E-Learning").collection("daily-tasks").deleteMany({});
-            console.log(`Cleared old daily tasks: ${removeOldData.deletedCount} records removed`);
         });
         console.log("✅ Switched to 24-hour schedule for both dice and questions");
     }
