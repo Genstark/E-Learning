@@ -8,12 +8,10 @@ const { generateSecretKey } = require('./utils/generateSecreteKey');
 const { rollDice } = require('./utils/randomRollDice');
 const path = require('path');
 const ngrok = require('@ngrok/ngrok');
-const cron = require('node-cron');
+const cron = require('node-cron'); // not required but useful for scheduling
 const googleAPI = require('./utils/googleAPI');
 const { encryptToken, decryptToken } = require('./utils/Encryption');
 const { uploadData, downloadData } = require('./utils/uploadingData');
-const { re } = require('mathjs');
-const { hash } = require('crypto');
 require('dotenv').config();
 
 const app = express();
@@ -69,7 +67,7 @@ client.connect().then(async () => {
     console.error("Failed to connect:", err);
 });
 
-app.get('/api/validate-token', authenticateToken, (req, res) => {
+app.get('/api/validate-token', authenticateToken, async (req, res) => {
     try {
         if (!req.user) {
             console.log("Token is invalid");
@@ -97,7 +95,6 @@ app.post('/api/reset-password', async (req, res) => {
     if (req.body.task === 'resetPassword'){
         const { userEmail, confirmPassword } = req.body;
         const hashedPassword = await bcrypt.hash(confirmPassword, 10);
-        console.log('Resetting password for:', hashedPassword);
         try {
             await client.db("E-Learning").collection("users").updateOne(
                 { email: userEmail },
@@ -160,7 +157,6 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
         if (await bcrypt.compare(password, user.password)) {
-            await console.log(bcrypt.compare(password, user.password));
             let token = jwt.sign({ email: user.email, username: user.name }, SECRET_KEY, { expiresIn: '23h' });
             token = await encryptToken({ action: 'encrypt', token });
             res.cookie('token', token, { httpOnly: false, secure: true, sameSite: "Strict", maxAge: 23 * 60 * 60 * 1000 });
@@ -191,9 +187,35 @@ app.get('/api/repeat-check/:user', async (req, res) => {
 // Get dice roll and questions
 app.get('/api/roll-dice', async (req, res) => {
     try {
-        // console.log(questions);
-        res.status(200).json({ result: rolldicenumber, 'questions': questions });
+        const collectTaskData = await client.db("E-Learning").collection("daily-task-data").find().toArray();
+        const today = new Date().toISOString().slice(0, 10);
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+        const todayDoc = collectTaskData.find(d => d.date === today);
+        const yesterdayDoc = collectTaskData.find(d => d.date === yesterday);
+
+        if (todayDoc) {
+            // Use today's stored data
+            rolldicenumber = todayDoc.rolldicenumber || [];
+            questions = todayDoc.questions || [];
+        } else {
+            // If yesterday exists, remove it and generate fresh data for today
+            if (yesterdayDoc) {
+                await client.db("E-Learning").collection("daily-task-data").deleteMany({ date: yesterday });
+            }
+            // Generate new data for today and store/update it
+            rolldicenumber = await rollDice();
+            questions = await googleAPI.generateText("generate most tough and tough scientific questions");
+            await client.db("E-Learning").collection("daily-task-data").updateOne(
+                { date: today },
+                { $set: { date: today, rolldicenumber, questions } },
+                { upsert: true }
+            );
+        }
+
+        res.status(200).json({ result: rolldicenumber, questions, ok: true });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -279,27 +301,16 @@ app.get(/.*/, (req, res) => {
 
 let job = cron.schedule("* * * * * *", async () => {
     if (!SECRET_KEY) {
-        SECRET_KEY = generateSecretKey();
+        SECRET_KEY = await generateSecretKey();
         console.log("Generated new SECRET_KEY");
     }
-    if (rolldicenumber.length == 0 && questions.length == 0) {
-        console.log("Running initial fetch for dice and questions");
-        rolldicenumber = await rollDice();
-        questions = await googleAPI.generateText("generate most tough and tough questions scientific");
-        console.log('Questions and dice fetched');
-    }
 
-    if (rolldicenumber.length > 0 && questions.length > 0) {
-        job.stop();
-        job = cron.schedule("0 0 * * *", async () => {
-            rolldicenumber = await rollDice();
-            questions = await googleAPI.generateText("generate most tough and tough questions scientific");
-            console.log('Questions and dice fetched');
-            SECRET_KEY = generateSecretKey();
-            console.log("Generated new SECRET_KEY");
-        });
-        console.log("✅ Switched to 24-hour schedule for both dice and questions");
-    }
+    job.stop();
+    job = cron.schedule("0 0 * * *", async () => {
+        SECRET_KEY = await generateSecretKey();
+        console.log("Generated new SECRET_KEY");
+    });
+    console.log("✅ Switched to 24-hour schedule for both dice and questions");
 });
 
 const PORT = process.env.PORT || 3000;
@@ -308,7 +319,7 @@ app.listen(PORT, () => {
     console.log(`Server is running on port http://localhost:${PORT}`);
 });
 
-const canRunNgrok = false // Set to true if you want to run ngrok
+const canRunNgrok = false; // Set to true if you want to run ngrok
 if (canRunNgrok) {
     ngrok.connect({ addr: PORT, authtoken: process.env.NGROK })
         .then(listener => console.log(`Ingress established at: ${listener.url()}`));

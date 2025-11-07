@@ -25,7 +25,6 @@ async function checkConfirmation() {
         credentials: 'include'
     });
     const data = await response.json();
-    console.log('Response from server:', data);
     buttonConfirmation_visible.value = false;
     if (data.ok) {
         isConfirmed.value = true;
@@ -55,7 +54,6 @@ async function resetPassword() {
         credentials: 'include'
     });
     const data = await response.json();
-    console.log('Response from server:', data);
     if (data.ok) {
         alert('Password reset successful! Please log in with your new password.');
         // Redirect to login page
@@ -85,20 +83,21 @@ async function resetPassword() {
                 </div>
                 <div v-if="isConfirmed">
                     <label for="new-password" class="block text-sm font-medium text-gray-700">New Password</label>
-                    <input type="password" id="new-password" required
+                    <input type="password" id="new-password" required v-model="newPassword"
                         class="w-full px-4 py-2 border rounded-md focus:ring focus:ring-primary-200" />
                 </div>
+
                 <div v-if="isConfirmed">
                     <label for="confirm-password" class="block text-sm font-medium text-gray-700">Confirm
                         Password</label>
-                    <input type="password" required
+                    <input type="password" required v-model="confirmPassword"
                         class="w-full px-4 py-2 border rounded-md focus:ring focus:ring-primary-200" />
                 </div>
-                <button type="submit" @click="checkConfirmation" v-if="buttonConfirmation_visible"
+                <button type="button" @click="checkConfirmation" v-if="buttonConfirmation_visible"
                     class="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 rounded-md">Check
                     Confirmation</button>
 
-                <button type="submit" @click="resetPassword" v-if="buttonReset_visible"
+                <button type="button" @click="resetPassword" v-if="buttonReset_visible"
                     class="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 rounded-md">Reset
                     Password</button>
             </form>

@@ -23,7 +23,6 @@ onBeforeMount(async () => {
         credentials: 'include'
     });
     const data = await response.json();
-    console.log(data);
     if (data.ok) {
         console.warn('Already Done');
         // router.push({ name: 'user-home', params: { id: localStorage.getItem('user') } });
@@ -75,8 +74,49 @@ const questions = ref([
         question: "Which planet is known as the Red Planet?",
         options: ["Venus", "Mars", "Jupiter", "Saturn"],
         correctAnswer: 1
+    },
+    {
+        question: "What is the largest ocean on Earth?",
+        options: ["Atlantic Ocean", "Indian Ocean", "Pacific Ocean", "Arctic Ocean"],
+        correctAnswer: 2
+    },
+    {
+        question: "Who wrote 'Romeo and Juliet'?",
+        options: ["Charles Dickens", "William Shakespeare", "Mark Twain", "Jane Austen"],
+        correctAnswer: 1
+    },
+    {
+        question: "Which gas do plants absorb from the atmosphere?",
+        options: ["Oxygen", "Nitrogen", "Carbon Dioxide", "Hydrogen"],
+        correctAnswer: 2
+    },
+    {
+        question: "What is the largest planet in our solar system?",
+        options: ["Earth", "Mars", "Jupiter", "Saturn"],
+        correctAnswer: 2
+    },
+    {
+        question: "In which continent is the Sahara Desert located?",
+        options: ["Asia", "Africa", "Australia", "South America"],
+        correctAnswer: 1
+    },
+    {
+        question: "Who painted the Mona Lisa?",
+        options: ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Claude Monet"],
+        correctAnswer: 2
+    },
+    {
+        question: "What is the chemical symbol for gold?",
+        options: ["Ag", "Au", "Fe", "Go"],
+        correctAnswer: 1
+    },
+    {
+        question: "Which country is known as the Land of the Rising Sun?",
+        options: ["China", "Japan", "Thailand", "India"],
+        correctAnswer: 1
     }
 ]);
+
 
 const currentQuestionIndex = ref(0);
 const selectedAnswer = ref(null);
@@ -87,7 +127,6 @@ const totalSolvedNumber = ref(0);
 // Safe computed properties
 const currentQuestion = computed(() => {
     if (Array.isArray(questions.value) && questions.value[currentQuestionIndex.value]) {
-        console.log('Current Question:', questions.value[currentQuestionIndex.value]);
         return questions.value[currentQuestionIndex.value];
     }
     return null;
@@ -151,7 +190,6 @@ async function startGame() {
 
         // Questions handle karo
         if (data && data.questions) {
-            console.log('📦 API Questions:', data.questions);
             let parsedQuestions = null;
             // Agar string hai toh parse karo
             if (typeof data.questions === 'string') {
@@ -265,23 +303,33 @@ function goToELibrary() {
 async function validateExpression() {
     let result;
     try {
-        if (!/^[0-9+\-*/().\s]+$/.test(userInput.value)) {
+        const expr = String(userInput.value || '').trim();
+        if (!/^[0-9+\-*/().\s]+$/.test(expr)) {
             throw new Error('Invalid characters used.');
         }
-        result = evaluate(userInput.value);
+
+        // Reject inputs that are just a number or that don't contain any operator (+ - * /)
+        // This prevents accepting a single digit (or single number) without an expression.
+        if (!/[+\-*/]/.test(expr)) {
+            message.value = 'Please enter a valid expression containing at least one operator (e.g. (6+6)/3).';
+            return;
+        }
+
+        const raw = evaluate(expr);
+        const numeric = Number(raw);
+        if (!Number.isFinite(numeric) || !Number.isInteger(numeric)) {
+            throw new Error('Expression must evaluate to an integer.');
+        }
+        result = numeric;
     } catch (err) {
         message.value = 'Invalid expression.';
         return;
     }
 
-    const matchedTarget = targetNumbers.value.find(n => !n.disabled && n.value === result);
-    if (!matchedTarget) {
-        message.value = 'Result does not match any active number.';
-        return;
-    }
+    const usedNumbers = (userInput.value.match(/\d+/g) || []).map(Number);
+    // Ensure dice values are numeric so comparisons succeed for single-digit inputs
+    const diceCopy = [...dice.value].map(Number);
 
-    const usedNumbers = userInput.value.match(/\d+/g)?.map(Number) || [];
-    const diceCopy = [...dice.value];
     for (const num of usedNumbers) {
         const i = diceCopy.indexOf(num);
         if (i === -1) {
@@ -290,6 +338,15 @@ async function validateExpression() {
         }
         diceCopy.splice(i, 1);
     }
+
+    // Find a target matching the evaluated result that is not already disabled
+    const matchedTarget = targetNumbers.value.find(t => t.value === result && !t.disabled);
+    if (!matchedTarget) {
+        message.value = 'No matching target available to clear.';
+        return;
+    }
+
+    // Mark the target as cleared and update counters/state
     totalSolvedNumber.value += 1;
     matchedTarget.disabled = true;
     message.value = `Great! You cleared ${result}.`;
@@ -316,16 +373,19 @@ function endGame() {
 
                     <!-- Dice -->
                     <div v-memo="[dice]" class="flex justify-center space-x-4 mb-6">
-                        <div v-for="(d, i) in dice" :key="i" :class="{ 'animate-dice-roll': animatingDice }"    
+                        <div v-for="(d, i) in dice" :key="i" :class="{ 'animate-dice-roll': animatingDice }"
                             class="w-16 h-16 rounded-xl bg-purple-100 text-purple-800 border-2 border-purple-500 text-3xl font-bold flex items-center justify-center shadow-xl hover:scale-105 transition-transform">
                             {{ d }}
                         </div>
                     </div>
 
                     <!-- Targets -->
-                    <div class="grid grid-cols-5 gap-3 mb-6">
+                    <div class="grid grid-cols-5 gap-2 sm:gap-3 md:gap-4 mb-6">
                         <div v-for="num in targetNumbers" :key="num.value" :class="[
-                            'w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold transition-all',
+                            'w-10 h-10 text-sm rounded-full flex items-center justify-center font-bold transition-all', // mobile (UNCHANGED)
+                            'sm:w-12 sm:h-12 sm:text-base',   // tablet-ish
+                            'md:w-12 md:h-12 md:text-lg',     // small desktop / large tablet
+                            'lg:w-14 lg:h-14 lg:text-xl',     // larger desktop
                             num.disabled
                                 ? 'bg-gray-300 text-gray-500 line-through scale-95 animate-cleared-target'
                                 : 'bg-purple-100 text-purple-800 border border-purple-400 hover:bg-purple-200 hover:scale-105'
@@ -333,6 +393,8 @@ function endGame() {
                             {{ num.value }}
                         </div>
                     </div>
+
+
 
                     <!-- Input -->
                     <input type="text" v-model="userInput" placeholder="e.g. (6+6)/3"

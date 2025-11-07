@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
-    "@ngrok/ngrok": "^1.5.2",
     "autoprefixer": "^10",
     "bcrypt": "^6.0.0",
     "core-js": "^3.8.3",
@@ -37,6 +36,7 @@
   "devDependencies": {
     "@babel/core": "^7.12.16",
     "@babel/eslint-parser": "^7.12.16",
+    "@ngrok/ngrok": "^1.5.2",
     "@tailwindcss/postcss": "^4.1.11",
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-eslint": "~5.0.0",
