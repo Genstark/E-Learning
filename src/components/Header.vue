@@ -58,8 +58,9 @@ function logout() {
 
                     <!-- Nav (hidden on mobile) -->
                     <nav class="hidden md:flex items-center space-x-4 lg:space-x-6">
+                        <router-link :to="`/${user}`" class="text-sm sm:text-base lg:text-lg text-gray-700 hover:text-primary-600">Home</router-link>
                         <router-link to="/about" class="text-sm sm:text-base lg:text-lg text-gray-700 hover:text-primary-600">About</router-link>
-                        <router-link to="/explore" class="text-sm sm:text-base lg:text-lg text-gray-700 hover:text-primary-600">Explore</router-link>
+                        <!-- <router-link to="/explore" class="text-sm sm:text-base lg:text-lg text-gray-700 hover:text-primary-600">Explore</router-link> -->
                         <router-link :to="user ? `/${user}/scores` : '/scores'" class="text-sm sm:text-base lg:text-lg text-gray-700 hover:text-primary-600">
                             Scores
                         </router-link>

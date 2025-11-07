@@ -75,8 +75,49 @@ const questions = ref([
         question: "Which planet is known as the Red Planet?",
         options: ["Venus", "Mars", "Jupiter", "Saturn"],
         correctAnswer: 1
+    },
+    {
+        question: "What is the largest ocean on Earth?",
+        options: ["Atlantic Ocean", "Indian Ocean", "Pacific Ocean", "Arctic Ocean"],
+        correctAnswer: 2
+    },
+    {
+        question: "Who wrote 'Romeo and Juliet'?",
+        options: ["Charles Dickens", "William Shakespeare", "Mark Twain", "Jane Austen"],
+        correctAnswer: 1
+    },
+    {
+        question: "Which gas do plants absorb from the atmosphere?",
+        options: ["Oxygen", "Nitrogen", "Carbon Dioxide", "Hydrogen"],
+        correctAnswer: 2
+    },
+    {
+        question: "What is the largest planet in our solar system?",
+        options: ["Earth", "Mars", "Jupiter", "Saturn"],
+        correctAnswer: 2
+    },
+    {
+        question: "In which continent is the Sahara Desert located?",
+        options: ["Asia", "Africa", "Australia", "South America"],
+        correctAnswer: 1
+    },
+    {
+        question: "Who painted the Mona Lisa?",
+        options: ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Claude Monet"],
+        correctAnswer: 2
+    },
+    {
+        question: "What is the chemical symbol for gold?",
+        options: ["Ag", "Au", "Fe", "Go"],
+        correctAnswer: 1
+    },
+    {
+        question: "Which country is known as the Land of the Rising Sun?",
+        options: ["China", "Japan", "Thailand", "India"],
+        correctAnswer: 1
     }
 ]);
+
 
 const currentQuestionIndex = ref(0);
 const selectedAnswer = ref(null);

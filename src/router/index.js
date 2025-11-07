@@ -83,6 +83,11 @@ router.beforeEach(async (to, from, next) => {
 
     if (to.path === '/') {
         console.log('✅ Skipping guard for home page');
+        const useris = localStorage.getItem('user');
+        if (useris) {
+            console.log('➡️ Redirecting to user home:', `/${useris}`);
+            return next({path: `/${useris}`});
+        }
         return next({path: '/login'});
     }
 
