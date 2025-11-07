@@ -23,7 +23,6 @@ onBeforeMount(async () => {
         credentials: 'include'
     });
     const data = await response.json();
-    console.log(data);
     if (data.ok) {
         console.warn('Already Done');
         // router.push({ name: 'user-home', params: { id: localStorage.getItem('user') } });
@@ -128,7 +127,6 @@ const totalSolvedNumber = ref(0);
 // Safe computed properties
 const currentQuestion = computed(() => {
     if (Array.isArray(questions.value) && questions.value[currentQuestionIndex.value]) {
-        console.log('Current Question:', questions.value[currentQuestionIndex.value]);
         return questions.value[currentQuestionIndex.value];
     }
     return null;
@@ -192,7 +190,6 @@ async function startGame() {
 
         // Questions handle karo
         if (data && data.questions) {
-            console.log('📦 API Questions:', data.questions);
             let parsedQuestions = null;
             // Agar string hai toh parse karo
             if (typeof data.questions === 'string') {
@@ -306,23 +303,33 @@ function goToELibrary() {
 async function validateExpression() {
     let result;
     try {
-        if (!/^[0-9+\-*/().\s]+$/.test(userInput.value)) {
+        const expr = String(userInput.value || '').trim();
+        if (!/^[0-9+\-*/().\s]+$/.test(expr)) {
             throw new Error('Invalid characters used.');
         }
-        result = evaluate(userInput.value);
+
+        // Reject inputs that are just a number or that don't contain any operator (+ - * /)
+        // This prevents accepting a single digit (or single number) without an expression.
+        if (!/[+\-*/]/.test(expr)) {
+            message.value = 'Please enter a valid expression containing at least one operator (e.g. (6+6)/3).';
+            return;
+        }
+
+        const raw = evaluate(expr);
+        const numeric = Number(raw);
+        if (!Number.isFinite(numeric) || !Number.isInteger(numeric)) {
+            throw new Error('Expression must evaluate to an integer.');
+        }
+        result = numeric;
     } catch (err) {
         message.value = 'Invalid expression.';
         return;
     }
 
-    const matchedTarget = targetNumbers.value.find(n => !n.disabled && n.value === result);
-    if (!matchedTarget) {
-        message.value = 'Result does not match any active number.';
-        return;
-    }
+    const usedNumbers = (userInput.value.match(/\d+/g) || []).map(Number);
+    // Ensure dice values are numeric so comparisons succeed for single-digit inputs
+    const diceCopy = [...dice.value].map(Number);
 
-    const usedNumbers = userInput.value.match(/\d+/g)?.map(Number) || [];
-    const diceCopy = [...dice.value];
     for (const num of usedNumbers) {
         const i = diceCopy.indexOf(num);
         if (i === -1) {
@@ -331,6 +338,15 @@ async function validateExpression() {
         }
         diceCopy.splice(i, 1);
     }
+
+    // Find a target matching the evaluated result that is not already disabled
+    const matchedTarget = targetNumbers.value.find(t => t.value === result && !t.disabled);
+    if (!matchedTarget) {
+        message.value = 'No matching target available to clear.';
+        return;
+    }
+
+    // Mark the target as cleared and update counters/state
     totalSolvedNumber.value += 1;
     matchedTarget.disabled = true;
     message.value = `Great! You cleared ${result}.`;
