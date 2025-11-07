@@ -305,14 +305,12 @@ let job = cron.schedule("* * * * * *", async () => {
         console.log("Generated new SECRET_KEY");
     }
 
-    if (rolldicenumber.length > 0 && questions.length > 0) {
-        job.stop();
-        job = cron.schedule("0 0 * * *", async () => {
-            SECRET_KEY = await generateSecretKey();
-            console.log("Generated new SECRET_KEY");
-        });
-        console.log("✅ Switched to 24-hour schedule for both dice and questions");
-    }
+    job.stop();
+    job = cron.schedule("0 0 * * *", async () => {
+        SECRET_KEY = await generateSecretKey();
+        console.log("Generated new SECRET_KEY");
+    });
+    console.log("✅ Switched to 24-hour schedule for both dice and questions");
 });
 
 const PORT = process.env.PORT || 3000;
