@@ -236,6 +236,25 @@ app.get('/api/daily-tasks/scoreboard', async (req, res) => {
     }
 });
 
+app.get('/api/user-score/:user', async (req, res) => {
+    try {
+        const username = req.params.user;
+        const userScoreData = await client.db("E-Learning").collection("daily-tasks").find({ userName: username }).toArray();
+        if (!userScoreData) {
+            return res.status(404).json({ message: 'No score data found for user', ok: false });
+        }
+        const todayDate = new Date().toISOString().slice(0, 10);
+        for (let i = 0; i < userScoreData.length; i++) {
+            if (userScoreData[i].submissionDate === todayDate) {
+                res.status(200).json({ data: userScoreData[i], ok: true });
+                return;
+            }
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error', ok: false });
+    }
+});
+
 app.get('/api/download-score', async (req, res) => {
     // const getsocreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
     console.log('get all scoreboard data');

@@ -1,6 +1,7 @@
 // vue.config.js
 const { defineConfig } = require('@vue/cli-service')
 const Dotenv = require('dotenv-webpack');
+const { i } = require('mathjs');
 
 module.exports = defineConfig({
   transpileDependencies: true,
@@ -25,5 +26,11 @@ module.exports = defineConfig({
         }
       )
     ],
+  },
+  pwa: {
+    iconPaths: {
+      favicon32: './public/images/learning.png',
+      favicon16: 'img/icons/favicon-16x16.png',
+    }
   }
 })
