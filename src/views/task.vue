@@ -6,16 +6,69 @@ import Footer from '@/components/Footer.vue';
 import { evaluate } from "mathjs";
 import { useRouter } from 'vue-router';
 
+const GAME_STATE_KEY = 'numberBowlingGameState';
+
+// Function to save game state to localStorage
+function saveGameState() {
+    const gameState = {
+        targetNumbers: targetNumbers.value,
+        dice: dice.value,
+        userInput: userInput.value,
+        message: message.value,
+        startTime: startTime.value,
+        elapsedTime: elapsedTime.value,
+        totalGameTime: totalGameTime.value,
+        gameFinished: gameFinished.value,
+        gameStarted: gameStarted.value,
+        currentQuestionIndex: currentQuestionIndex.value,
+        score: score.value,
+        totalSolvedNumber: totalSolvedNumber.value,
+        questions: questions.value,
+    };
+    localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState));
+}
+
+// Function to restore game state from localStorage
+function restoreGameState() {
+    const savedState = localStorage.getItem(GAME_STATE_KEY);
+    if (savedState) {
+        const gameState = JSON.parse(savedState);
+        targetNumbers.value = gameState.targetNumbers;
+        dice.value = gameState.dice;
+        userInput.value = gameState.userInput;
+        message.value = gameState.message;
+        startTime.value = gameState.startTime;
+        elapsedTime.value = gameState.elapsedTime;
+        totalGameTime.value = gameState.totalGameTime;
+        gameFinished.value = gameState.gameFinished;
+        gameStarted.value = gameState.gameStarted;
+        currentQuestionIndex.value = gameState.currentQuestionIndex;
+        score.value = gameState.score;
+        totalSolvedNumber.value = gameState.totalSolvedNumber;
+        questions.value = gameState.questions;
+
+        // Restore timer if it was running
+        if (gameStarted.value && !gameFinished.value) {
+            timerInterval = setInterval(() => {
+                elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
+            }, 1000);
+        }
+    }
+}
+
 onUnmounted(() => {
     if (timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;
     }
+    saveGameState();
 });
 
 const pending = ref(true);
 
 onBeforeMount(async () => {
+    restoreGameState(); // Restore game state on component mount
+
     const user = localStorage.getItem('user');
     const response = await fetch(`${process.env.VUE_APP_URL}/repeat-check/${user}`, {
         method: 'GET',
@@ -150,82 +203,86 @@ const formatTime = (timeInSeconds) => {
 
 // Enhanced startGame function with detailed logging
 async function startGame() {
-    if (loading.value) return; // Prevent multiple calls
+    if (loading.value || gameStarted.value) return; // Prevent multiple calls if game already started
 
     loading.value = true;
     message.value = 'Loading game data...';
 
     // Timer start karo
     if (!startTime.value) {
-        startTime.value = Date.now();
+        startTime.value = Date.now() - (elapsedTime.value * 1000); // Adjust for paused time
         timerInterval = setInterval(() => {
             elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
         }, 1000);
     }
     gameStarted.value = true;
 
-    // API se data fetch karo
-    try {
-        console.log(`🔄 Calling API: ${process.env.VUE_APP_URL}/roll-dice`);
-        const response = await fetch(`${process.env.VUE_APP_URL}/roll-dice`);
+    // API se data fetch karo (only if dice are not already loaded)
+    if (dice.value.length === 0) {
+        try {
+            console.log(`🔄 Calling API: ${process.env.VUE_APP_URL}/roll-dice`);
+            const response = await fetch(`${process.env.VUE_APP_URL}/roll-dice`);
 
-        console.log('📊 Response Status:', response.status);
-        console.log('📊 Response OK:', response.ok);
+            console.log('📊 Response Status:', response.status);
+            console.log('📊 Response OK:', response.ok);
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('📦 Full API Response:', data);
-
-        // Dice handle karo
-        if (data && data.result && Array.isArray(data.result)) {
-            dice.value = [...data.result];
-            message.value = 'API data loaded - Dice updated';
-        } else {
-            dice.value = [1, 2, 3, 4];
-            message.value = 'Using default dice';
-        }
-
-        // Questions handle karo
-        if (data && data.questions) {
-            let parsedQuestions = null;
-            // Agar string hai toh parse karo
-            if (typeof data.questions === 'string') {
-                try {
-                    const parsed = JSON.parse(data.questions);
-                    // Agar parsed object mein questions property hai toh use karo
-                    if (Array.isArray(parsed.questions)) {
-                        parsedQuestions = parsed.questions;
-                    } else if (Array.isArray(parsed)) {
-                        parsedQuestions = parsed;
-                    }
-                } catch (parseError) {
-                    console.error('❌ Failed to parse questions string:', parseError);
-                }
-            } else if (Array.isArray(data.questions)) {
-                parsedQuestions = data.questions;
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
-            if (parsedQuestions && Array.isArray(parsedQuestions) && parsedQuestions.length > 0) {
-                questions.value = [...parsedQuestions];
-                currentQuestionIndex.value = 0;
-                selectedAnswer.value = null;
-                answerFeedback.value = null;
-                score.value = 0;
-                message.value = `Questions loaded: ${questions.value.length} questions`; // temp
+            const data = await response.json();
+            console.log('📦 Full API Response:', data);
+
+            // Dice handle karo
+            if (data && data.result && Array.isArray(data.result)) {
+                dice.value = [...data.result];
+                message.value = 'API data loaded - Dice updated';
             } else {
-                message.value = 'Questions parsing failed - using defaults';
+                dice.value = [1, 2, 3, 4];
+                message.value = 'Using default dice';
             }
-        } else {
-            message.value = 'No questions from API - using defaults';
+
+            // Questions handle karo
+            if (data && data.questions) {
+                let parsedQuestions = null;
+                // Agar string hai toh parse karo
+                if (typeof data.questions === 'string') {
+                    try {
+                        const parsed = JSON.parse(data.questions);
+                        // Agar parsed object mein questions property hai toh use karo
+                        if (Array.isArray(parsed.questions)) {
+                            parsedQuestions = parsed.questions;
+                        } else if (Array.isArray(parsed)) {
+                            parsedQuestions = parsed;
+                        }
+                    } catch (parseError) {
+                        console.error('❌ Failed to parse questions string:', parseError);
+                    }
+                } else if (Array.isArray(data.questions)) {
+                    parsedQuestions = data.questions;
+                }
+
+                if (parsedQuestions && Array.isArray(parsedQuestions) && parsedQuestions.length > 0) {
+                    questions.value = [...parsedQuestions];
+                    currentQuestionIndex.value = 0;
+                    selectedAnswer.value = null;
+                    answerFeedback.value = null;
+                    score.value = 0;
+                    message.value = `Questions loaded: ${questions.value.length} questions`; // temp
+                } else {
+                    message.value = 'Questions parsing failed - using defaults';
+                }
+            } else {
+                message.value = 'No questions from API - using defaults';
+            }
+        } catch (error) {
+            console.error('🚨 API Error:', error);
+            dice.value = [1, 2, 3, 4];
+            message.value = `API Error: ${error.message}`;
+        } finally {
+            loading.value = false;
         }
-    } catch (error) {
-        console.error('🚨 API Error:', error);
-        dice.value = [1, 2, 3, 4];
-        message.value = `API Error: ${error.message}`;
-    } finally {
+    } else {
         loading.value = false;
     }
 }
@@ -285,6 +342,7 @@ async function submitAnswer() {
             const data = await response.json();
             if (data.ok) {
                 alert('Daily tasks submitted successfully!');
+                localStorage.removeItem(GAME_STATE_KEY); // Clear saved state
                 router.push({ name: 'user-home', params: { id: localStorage.getItem('user') } });
             } else {
                 alert('Failed to submit daily tasks.');
@@ -355,6 +413,7 @@ async function validateExpression() {
 
 function endGame() {
     targetNumbers.value.forEach(n => n.disabled = true);
+    localStorage.removeItem(GAME_STATE_KEY);
 }
 </script>
 
