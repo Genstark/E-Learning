@@ -8,6 +8,7 @@ import { useRouter } from 'vue-router';
 
 const GAME_STATE_KEY = 'numberBowlingGameState';
 
+// New changes
 // Function to save game state to localStorage
 function saveGameState() {
     const gameState = {
