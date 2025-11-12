@@ -22,7 +22,7 @@ async function loadProfile() {
             credentials: 'include'
         });
         const json = await res.json();
-        if (res.ok && json.ok && json.data) {
+        if (res.ok && json.data) {
             profile.value = json.data;
         } else {
             // if the API returns not found, fallback to minimal info from localStorage (if any)
@@ -66,7 +66,8 @@ const totalScore = computed(() => {
                     <div class="flex items-center gap-4">
                         <!-- Avatar: initials fallback -->
                         <div
-                            class="flex items-center justify-center bg-blue-100 text-blue-800 rounded-full w-16 h-16 sm:w-20 sm:h-20 text-xl font-semibold">
+                            class="flex items-center justify-center bg-blue-100 text-blue-800 rounded-full w-16 h-16 sm:w-20 
+                            sm:h-20 text-xl font-semibold border-2 border-blue-300">
                             {{ (displayName || 'U').slice(0, 1).toUpperCase() }}
                         </div>
                         <div>
