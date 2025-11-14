@@ -5,7 +5,7 @@ require('dotenv').config();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI);
 
 async function generateText(prompt) {
-    console.log('Wait... for Generating Tasks');
+    console.log('Generating Tasks please wait...');
     try {
         const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash", // Use "gemini-2.5-flash" if available to you
@@ -36,6 +36,7 @@ async function generateText(prompt) {
                 responseMimeType: "application/json"
             }
         });
+        console.log('Task Generated Successfully');
         return result.response.text();
     }
     catch (error) {

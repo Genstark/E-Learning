@@ -6,9 +6,22 @@ import { evaluate } from "mathjs";
 import { useRouter } from 'vue-router';
 
 const GAME_STATE_KEY = 'numberBowlingGameState';
+const LAST_SUBMISSION_DATE_KEY = 'lastSubmissionDate';
+
+// Function to check if it's a new day
+function isNewDay() {
+    const lastDate = localStorage.getItem(LAST_SUBMISSION_DATE_KEY);
+    const today = new Date().toISOString().slice(0, 10);
+    return !lastDate || lastDate !== today;
+}
 
 // Function to save game state to localStorage
 function saveGameState() {
+    // Agar game finish ho gaya hai to localStorage save mat karo
+    if (gameFinished.value) {
+        return;
+    }
+    
     const gameState = {
         targetNumbers: targetNumbers.value,
         dice: dice.value,
@@ -29,29 +42,41 @@ function saveGameState() {
 
 // Function to restore game state from localStorage
 function restoreGameState() {
-    const savedState = localStorage.getItem(GAME_STATE_KEY);
-    if (savedState) {
-        const gameState = JSON.parse(savedState);
-        targetNumbers.value = gameState.targetNumbers;
-        dice.value = gameState.dice;
-        userInput.value = gameState.userInput;
-        message.value = gameState.message;
-        startTime.value = gameState.startTime;
-        elapsedTime.value = gameState.elapsedTime;
-        totalGameTime.value = gameState.totalGameTime;
-        gameFinished.value = gameState.gameFinished;
-        gameStarted.value = gameState.gameStarted;
-        currentQuestionIndex.value = gameState.currentQuestionIndex;
-        score.value = gameState.score;
-        totalSolvedNumber.value = gameState.totalSolvedNumber;
-        questions.value = gameState.questions;
+    // Pehle check karo ki new day hai ya nahi
+    if (!isNewDay()) {
+        const savedState = localStorage.getItem(GAME_STATE_KEY);
+        if (savedState) {
+            const gameState = JSON.parse(savedState);
+            // Agar game already finished hai to restore mat karo
+            if (gameState.gameFinished) {
+                localStorage.removeItem(GAME_STATE_KEY);
+                return;
+            }
 
-        // Restore timer if it was running
-        if (gameStarted.value && !gameFinished.value) {
-            timerInterval = setInterval(() => {
-                elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
-            }, 1000);
+            targetNumbers.value = gameState.targetNumbers;
+            dice.value = gameState.dice;
+            userInput.value = gameState.userInput;
+            message.value = gameState.message;
+            startTime.value = gameState.startTime;
+            elapsedTime.value = gameState.elapsedTime;
+            totalGameTime.value = gameState.totalGameTime;
+            gameFinished.value = gameState.gameFinished;
+            gameStarted.value = gameState.gameStarted;
+            currentQuestionIndex.value = gameState.currentQuestionIndex;
+            score.value = gameState.score;
+            totalSolvedNumber.value = gameState.totalSolvedNumber;
+            questions.value = gameState.questions;
+
+            // Restore timer if it was running
+            if (gameStarted.value && !gameFinished.value) {
+                timerInterval = setInterval(() => {
+                    elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
+                }, 1000);
+            }
         }
+    } else {
+        // New day hai to localStorage clear kar do
+        localStorage.removeItem(GAME_STATE_KEY);
     }
 }
 
@@ -63,30 +88,38 @@ onUnmounted(() => {
     saveGameState();
 });
 
-const pending = ref(true);
+const pending = ref(false);
+const router = useRouter();
 
 onBeforeMount(async () => {
-    restoreGameState(); // Restore game state on component mount
-
     const user = localStorage.getItem('user');
-    const response = await fetch(`${process.env.VUE_APP_URL}/repeat-check/${user}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include'
-    });
-    const data = await response.json();
-    if (data.ok) {
-        console.warn('Already Done');
-        // router.push({ name: 'user-home', params: { id: localStorage.getItem('user') } });
+    
+    try {
+        const response = await fetch(`${process.env.VUE_APP_URL}/repeat-check/${user}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (data.ok) {
+            // Already done today - redirect to home
+            console.warn('Already Done Today');
+            alert('You have already completed today\'s tasks!');
+            router.push({ name: 'user-home', params: { id: user } });
+            return;
+        } else {
+            // New day ya abhi nahi kiya - restore state agar hai to
+            console.log('New Day or Not Done Yet - Loading Game');
+            restoreGameState();
+            pending.value = true;
+        }
+    } catch (error) {
+        console.error('Error checking repeat status:', error);
+        restoreGameState();
         pending.value = true;
-    }
-    else {
-        pending.value = true;
-        console.log('Not Done Yet');
     }
 });
-
-const router = useRouter();
 
 const targetNumbers = ref(
     Array.from({ length: 10 }, (_, i) => ({ value: i + 1, disabled: false }))
@@ -169,7 +202,6 @@ const questions = ref([
     }
 ]);
 
-
 const currentQuestionIndex = ref(0);
 const selectedAnswer = ref(null);
 const score = ref(0);
@@ -202,14 +234,14 @@ const formatTime = (timeInSeconds) => {
 
 // Enhanced startGame function with detailed logging
 async function startGame() {
-    if (loading.value || gameStarted.value) return; // Prevent multiple calls if game already started
+    if (loading.value || gameStarted.value) return;
 
     loading.value = true;
     message.value = 'Loading game data...';
 
     // Timer start karo
     if (!startTime.value) {
-        startTime.value = Date.now() - (elapsedTime.value * 1000); // Adjust for paused time
+        startTime.value = Date.now() - (elapsedTime.value * 1000);
         timerInterval = setInterval(() => {
             elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
         }, 1000);
@@ -244,11 +276,9 @@ async function startGame() {
             // Questions handle karo
             if (data && data.questions) {
                 let parsedQuestions = null;
-                // Agar string hai toh parse karo
                 if (typeof data.questions === 'string') {
                     try {
                         const parsed = JSON.parse(data.questions);
-                        // Agar parsed object mein questions property hai toh use karo
                         if (Array.isArray(parsed.questions)) {
                             parsedQuestions = parsed.questions;
                         } else if (Array.isArray(parsed)) {
@@ -304,7 +334,6 @@ async function submitAnswer() {
         };
     }
 
-    // Check if this is the last question
     const isLastQuestion = currentQuestionIndex.value === questionsCount.value - 1;
 
     if (isLastQuestion) {
@@ -317,13 +346,12 @@ async function submitAnswer() {
         totalGameTime.value = elapsedTime.value;
         gameFinished.value = true;
 
-        // Wait for 1.5 seconds to show feedback, then submit
         setTimeout(async () => {
             alert(`Quiz completed! Your score: ${score.value}/${questionsCount.value}\nNumber of questions solved: ${totalSolvedNumber.value}\nTotal time: ${formatTime(totalGameTime.value)}`);
 
-            // Submit to server only if both games are complete
             if (bothGamesComplete.value) {
                 try {
+                    const todayDate = new Date().toISOString().slice(0, 10);
                     const response = await fetch(`${process.env.VUE_APP_URL}/submit/daily-tasks`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -333,14 +361,16 @@ async function submitAnswer() {
                             totalScore: Number(score.value + totalSolvedNumber.value),
                             totalTime: formatTime(totalGameTime.value),
                             userName: localStorage.getItem('user'),
-                            submissionDate: new Date().toISOString().slice(0, 10),
+                            submissionDate: todayDate,
                         })
                     });
 
                     const data = await response.json();
                     if (data.ok) {
-                        alert('Daily tasks submitted successfully!');
+                        // Successfully submitted - clear localStorage and save submission date
                         localStorage.removeItem(GAME_STATE_KEY);
+                        localStorage.setItem(LAST_SUBMISSION_DATE_KEY, todayDate);
+                        alert('Daily tasks submitted successfully!');
                         router.push({ name: 'user-home', params: { id: localStorage.getItem('user') } });
                     } else {
                         alert('Failed to submit daily tasks.');
@@ -352,7 +382,6 @@ async function submitAnswer() {
             }
         }, 1500);
     } else {
-        // Move to next question after showing feedback
         setTimeout(() => {
             currentQuestionIndex.value++;
             selectedAnswer.value = null;
@@ -373,8 +402,6 @@ async function validateExpression() {
             throw new Error('Invalid characters used.');
         }
 
-        // Reject inputs that are just a number or that don't contain any operator (+ - * /)
-        // This prevents accepting a single digit (or single number) without an expression.
         if (!/[+\-*/]/.test(expr)) {
             message.value = 'Please enter a valid expression containing at least one operator (e.g. (6+6)/3).';
             return;
@@ -392,7 +419,6 @@ async function validateExpression() {
     }
 
     const usedNumbers = (userInput.value.match(/\d+/g) || []).map(Number);
-    // Ensure dice values are numeric so comparisons succeed for single-digit inputs
     const diceCopy = [...dice.value].map(Number);
 
     for (const num of usedNumbers) {
@@ -404,28 +430,48 @@ async function validateExpression() {
         diceCopy.splice(i, 1);
     }
 
-    // Find a target matching the evaluated result that is not already disabled
     const matchedTarget = targetNumbers.value.find(t => t.value === result && !t.disabled);
     if (!matchedTarget) {
         message.value = 'No matching target available to clear.';
         return;
     }
 
-    // Mark the target as cleared and update counters/state
     totalSolvedNumber.value += 1;
     matchedTarget.disabled = true;
     message.value = `Great! You cleared ${result}.`;
     userInput.value = '';
 }
 
-function endGame() {
-    targetNumbers.value.forEach(n => n.disabled = true);
-    localStorage.removeItem(GAME_STATE_KEY);
+function endBowling() {
+    if (confirm('Are you sure you want to skip remaining numbers and move to MCQ questions?')) {
+        // Saare remaining numbers ko disabled kar do
+        targetNumbers.value.forEach(n => n.disabled = true);
+        message.value = 'Number Bowling ended. Now solve MCQ questions!';
+        userInput.value = '';
+    }
+}
+
+function quitGame() {
+    if (confirm('Are you sure you want to quit the entire game? All progress will be lost and you will be redirected to home.')) {
+        // Timer stop karo
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        
+        // Sab kuch clear kar do
+        localStorage.removeItem(GAME_STATE_KEY);
+        localStorage.removeItem(LAST_SUBMISSION_DATE_KEY);
+        
+        // Home page pe redirect kar do
+        alert('Game quit. Redirecting to home page...');
+        router.push({ name: 'user-home', params: { id: localStorage.getItem('user') } });
+    }
 }
 </script>
 
 <template>
-    <div v-if="true">
+    <div v-if="pending">
         <Header />
         <div class="min-h-screen bg-gray-100 p-4">
             <div class="max-w-6xl mx-auto grid grid-cols-1 gap-8">
@@ -469,9 +515,9 @@ function endGame() {
                     <div class="flex space-x-4">
                         <button @click="startGame" :disabled="gameStarted"
                             class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md shadow disabled:opacity-50 disabled:cursor-not-allowed">
-                            {{ gameStarted ? '🎲 Game Started' : '▶️ Start' }}
+                            {{ gameStarted ? '🎲 Game Started' : '▶️ Start Game' }}
                         </button>
-                        <button @click="endGame" :disabled="!gameStarted"
+                        <button @click="endBowling" :disabled="!gameStarted || bowlingComplete"
                             class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md shadow disabled:opacity-50 disabled:cursor-not-allowed">
                             ⏹️ End Game
                         </button>
@@ -589,6 +635,14 @@ function endGame() {
                         </button>
                     </div>
 
+                    <!-- Quit Game Button -->
+                    <div class="w-full mt-4">
+                        <button @click="quitGame" :disabled="!gameStarted || gameFinished"
+                            class="w-full bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md shadow transition-colors disabled:cursor-not-allowed">
+                            ❌ Quit Entire Game
+                        </button>
+                    </div>
+
                     <!-- Score and Total Time -->
                     <div class="w-full mt-4 text-center">
                         <p class="text-sm text-gray-600">
@@ -602,7 +656,14 @@ function endGame() {
             </div>
         </div>
     </div>
-    <div v-else></div>
+    <div v-else>
+        <div class="flex items-center justify-center min-h-screen bg-gray-100">
+            <div class="text-center">
+                <div class="text-4xl mb-4">⏳</div>
+                <p class="text-xl text-gray-700">Loading...</p>
+            </div>
+        </div>
+    </div>
 </template>
 
 <style scoped></style>
