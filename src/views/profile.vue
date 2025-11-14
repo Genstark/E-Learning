@@ -16,9 +16,13 @@ async function loadProfile() {
     loading.value = true;
     error.value = '';
     try {
-        const res = await fetch(`/api/repeat-check/${encodeURIComponent(username)}`);
+        const res = await fetch(`${process.env.VUE_APP_URL}/user-score/${username}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+        });
         const json = await res.json();
-        if (res.ok && json.ok && json.data) {
+        if (res.ok && json.data) {
             profile.value = json.data;
         } else {
             // if the API returns not found, fallback to minimal info from localStorage (if any)
@@ -38,6 +42,12 @@ onMounted(() => {
 
 const displayName = computed(() => profile.value?.userName || profile.value?.name || username || '—');
 const displayEmail = computed(() => profile.value?.userEmail || profile.value?.email || '—');
+const submissionDate = computed(() => {
+    if (profile.value && profile.value.submissionDate) {
+        return new Date(profile.value.submissionDate).toLocaleDateString();
+    }
+    return '—';
+});
 const mcqScore = computed(() => Number(profile.value?.mcqScore || 0));
 const numberBowlingScore = computed(() => Number(profile.value?.numberBowlingScore || 0));
 const totalScore = computed(() => {
@@ -55,8 +65,10 @@ const totalScore = computed(() => {
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div class="flex items-center gap-4">
                         <!-- Avatar: initials fallback -->
-                        <div class="flex items-center justify-center bg-blue-100 text-blue-800 rounded-full w-16 h-16 sm:w-20 sm:h-20 text-xl font-semibold">
-                            {{ (displayName || 'U').slice(0,1).toUpperCase() }}
+                        <div
+                            class="flex items-center justify-center bg-blue-100 text-blue-800 rounded-full w-16 h-16 sm:w-20 
+                            sm:h-20 text-xl font-semibold border-2 border-blue-300">
+                            {{ (displayName || 'U').slice(0, 1).toUpperCase() }}
                         </div>
                         <div>
                             <h2 class="text-xl sm:text-2xl font-semibold">{{ displayName }}</h2>
@@ -65,7 +77,8 @@ const totalScore = computed(() => {
                     </div>
 
                     <div class="flex items-center gap-3">
-                        <button class="px-4 py-2 bg-blue-600 text-white rounded w-full sm:w-auto text-sm" @click="loadProfile">
+                        <button class="px-4 py-2 bg-blue-600 text-white rounded w-full sm:w-auto text-sm"
+                            @click="loadProfile">
                             Refresh
                         </button>
                     </div>
@@ -90,6 +103,11 @@ const totalScore = computed(() => {
                             <div class="p-4 bg-gray-50 rounded">
                                 <dt class="text-xs text-gray-500">Total Score</dt>
                                 <dd class="text-2xl font-extrabold text-blue-700 mt-1">{{ totalScore }}</dd>
+                            </div>
+
+                            <div class="p-4 bg-gray-50 rounded">
+                                <dt class="text-xs text-gray-500">Date</dt>
+                                <dd class="text-2xl font-bold text-black mt-1">{{ submissionDate }}</dd>
                             </div>
                         </dl>
                     </div>

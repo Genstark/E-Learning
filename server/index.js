@@ -12,6 +12,7 @@ const cron = require('node-cron'); // not required but useful for scheduling
 const googleAPI = require('./utils/googleAPI');
 const { encryptToken, decryptToken } = require('./utils/Encryption');
 const { uploadData, downloadData } = require('./utils/uploadingData');
+const { to } = require('mathjs');
 require('dotenv').config();
 
 const app = express();
@@ -171,8 +172,10 @@ app.post('/api/login', async (req, res) => {
 // Check if user already submitted daily tasks
 app.get('/api/repeat-check/:user', async (req, res) => {
     try {
-        const scoreboardData = await client.db("E-Learning").collection("daily-tasks").findOne({ userName: req.params.user });
-        if (scoreboardData) {
+        const scoreboardData = await client.db("E-Learning").collection("daily-tasks").find({ userName: req.params.user }).toArray();
+        const checkTodayDate = new Date().toISOString().slice(0, 10);
+        const findTodayEntry = scoreboardData.find(entry => entry.submissionDate === checkTodayDate);
+        if (scoreboardData && findTodayEntry) {
             return res.status(200).json({ message: 'player found', ok: true, user: req.user, data: scoreboardData });
         }
         else {
@@ -233,6 +236,25 @@ app.get('/api/daily-tasks/scoreboard', async (req, res) => {
         res.status(200).json({ scoreData: rankedData, ok: true });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/user-score/:user', async (req, res) => {
+    try {
+        const username = req.params.user;
+        const userScoreData = await client.db("E-Learning").collection("daily-tasks").find({ userName: username }).toArray();
+        if (!userScoreData) {
+            return res.status(404).json({ message: 'No score data found for user', ok: false });
+        }
+        const todayDate = new Date().toISOString().slice(0, 10);
+        for (let i = 0; i < userScoreData.length; i++) {
+            if (userScoreData[i].submissionDate === todayDate) {
+                res.status(200).json({ data: userScoreData[i], ok: true });
+                return;
+            }
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error', ok: false });
     }
 });
 

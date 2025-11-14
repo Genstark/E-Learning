@@ -3,7 +3,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import Header from '@/components/Header.vue';
-import Footer from '@/components/Footer.vue';
+// import Footer from '@/components/Footer.vue';
 import { evaluate } from 'mathjs';
 import { onUnmounted } from 'vue';
 
@@ -347,7 +347,7 @@ function stop() {
             <span>Tip: Use all dice creatively. Fastest wins!</span>
         </div>
     </div>
-    <Footer />
+    <!-- <Footer /> -->
 </template>
 
 <style scoped></style>
