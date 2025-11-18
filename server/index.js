@@ -12,7 +12,6 @@ const cron = require('node-cron'); // not required but useful for scheduling
 const googleAPI = require('./utils/googleAPI');
 const { encryptToken, decryptToken } = require('./utils/Encryption');
 const { uploadData, downloadData } = require('./utils/uploadingData');
-const { to } = require('mathjs');
 require('dotenv').config();
 
 const app = express();
@@ -83,7 +82,7 @@ app.get('/api/validate-token', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/reset-password', async (req, res) => {
-    if (req.body.task === 'confirmation'){
+    if (req.body.task === 'confirmation') {
         const { userEmail, userName } = req.body;
         const findEmail = await client.db("E-Learning").collection("users").findOne({ email: userEmail });
         const findName = await client.db("E-Learning").collection("users").findOne({ name: userName });
@@ -93,7 +92,7 @@ app.post('/api/reset-password', async (req, res) => {
         res.status(200).json({ message: 'got the message', ok: true, userEmail: findEmail.email, userName: findName.name });
     }
 
-    if (req.body.task === 'resetPassword'){
+    if (req.body.task === 'resetPassword') {
         const { userEmail, confirmPassword } = req.body;
         const hashedPassword = await bcrypt.hash(confirmPassword, 10);
         try {
@@ -117,7 +116,7 @@ app.post('/api/signup', async (req, res) => {
 
     try {
         // Use $or to check both email and name in a single query for better performance
-        const existingUser = await client.db("E-Learning").collection("users").findOne({$or: [{ email }, { name }]});
+        const existingUser = await client.db("E-Learning").collection("users").findOne({ $or: [{ email }, { name }] });
 
         if (existingUser) {
             if (existingUser.email === email) {
@@ -204,18 +203,21 @@ app.get('/api/roll-dice', async (req, res) => {
         } else {
             // If yesterday exists, remove it and generate fresh data for today
             if (yesterdayDoc) {
-                await client.db("E-Learning").collection("daily-task-data").deleteMany({ date: yesterday });
+                await client.db("E-Learning").collection("daily-task-data").deleteMany(); // Clear all previous data
             }
             // Generate new data for today and store/update it
             rolldicenumber = await rollDice();
             questions = await googleAPI.generateText("generate most tough and tough scientific questions");
-            await client.db("E-Learning").collection("daily-task-data").updateOne(
-                { date: today },
-                { $set: { date: today, rolldicenumber, questions } },
-                { upsert: true }
+            while (questions.length < 10) {
+                questions = await googleAPI.generateText("generate most tough and tough scientific questions");
+                if (questions.length === 10) {
+                    break;
+                }
+            }
+            await client.db("E-Learning").collection("daily-task-data").insertOne(
+                { date: today, rolldicenumber, questions }
             );
         }
-
         res.status(200).json({ result: rolldicenumber, questions, ok: true });
     } catch (error) {
         console.error(error);
@@ -341,7 +343,7 @@ app.listen(PORT, () => {
     console.log(`Server is running on port http://localhost:${PORT}`);
 });
 
-const canRunNgrok = false; // Set to true if you want to run ngrok
+const canRunNgrok = true; // Set to true if you want to run ngrok
 if (canRunNgrok) {
     ngrok.connect({ addr: PORT, authtoken: process.env.NGROK })
         .then(listener => console.log(`Ingress established at: ${listener.url()}`));

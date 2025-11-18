@@ -21,7 +21,7 @@ function saveGameState() {
     if (gameFinished.value) {
         return;
     }
-    
+
     const gameState = {
         targetNumbers: targetNumbers.value,
         dice: dice.value,
@@ -90,10 +90,11 @@ onUnmounted(() => {
 
 const pending = ref(false);
 const router = useRouter();
+const completeGameScore = ref(null);
 
 onBeforeMount(async () => {
     const user = localStorage.getItem('user');
-    
+
     try {
         const response = await fetch(`${process.env.VUE_APP_URL}/repeat-check/${user}`, {
             method: 'GET',
@@ -101,12 +102,16 @@ onBeforeMount(async () => {
             credentials: 'include'
         });
         const data = await response.json();
-        
+        console.log('Repeat Check Response:', data.data);
         if (data.ok) {
             // Already done today - redirect to home
             console.warn('Already Done Today');
             alert('You have already completed today\'s tasks!');
-            router.push({ name: 'user-home', params: { id: user } });
+            // router.push({ name: 'user-home', params: { id: user } });
+            completeGameScore.value = data.data[data.data.length - 1];
+            console.log('Complete Game Score:', completeGameScore.value);
+            pending.value = false;
+            gameFinished.value = true;
             return;
         } else {
             // New day ya abhi nahi kiya - restore state agar hai to
@@ -239,7 +244,7 @@ async function startGame() {
     loading.value = true;
     message.value = 'Loading game data...';
 
-    // Timer start karo
+    // Timer start
     if (!startTime.value) {
         startTime.value = Date.now() - (elapsedTime.value * 1000);
         timerInterval = setInterval(() => {
@@ -248,7 +253,7 @@ async function startGame() {
     }
     gameStarted.value = true;
 
-    // API se data fetch karo (only if dice are not already loaded)
+    // API se data fetch (only if dice are not already loaded)
     if (dice.value.length === 0) {
         try {
             console.log(`🔄 Calling API: ${process.env.VUE_APP_URL}/roll-dice`);
@@ -458,11 +463,11 @@ function quitGame() {
             clearInterval(timerInterval);
             timerInterval = null;
         }
-        
+
         // Sab kuch clear kar do
         localStorage.removeItem(GAME_STATE_KEY);
         localStorage.removeItem(LAST_SUBMISSION_DATE_KEY);
-        
+
         // Home page pe redirect kar do
         alert('Game quit. Redirecting to home page...');
         router.push({ name: 'user-home', params: { id: localStorage.getItem('user') } });
@@ -471,8 +476,8 @@ function quitGame() {
 </script>
 
 <template>
+    <Header />
     <div v-if="pending">
-        <Header />
         <div class="min-h-screen bg-gray-100 p-4">
             <div class="max-w-6xl mx-auto grid grid-cols-1 gap-8">
 
@@ -656,11 +661,31 @@ function quitGame() {
             </div>
         </div>
     </div>
-    <div v-else>
-        <div class="flex items-center justify-center min-h-screen bg-gray-100">
-            <div class="text-center">
-                <div class="text-4xl mb-4">⏳</div>
-                <p class="text-xl text-gray-700">Loading...</p>
+    <div v-if="gameFinished">
+        <!-- Game Completed Message -->
+        <div v-if="gameFinished" class="w-full mb-6">
+            <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 text-center">
+                <div class="text-6xl mb-4">🎉</div>
+                <h3 class="text-2xl font-bold text-green-800 mb-3">Congratulations!</h3>
+                <p class="text-gray-700 text-lg mb-6">You've completed all tasks successfully!</p>
+                <p class="text-gray-700 text-lg mb-6">Today Score</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-white rounded-lg p-4 shadow">
+                        <p class="text-gray-600 text-sm mb-1">MCQ Score</p>
+                        <p class="text-2xl font-bold text-indigo-600">{{ completeGameScore.mcqScore }} / {{ questionsCount }}</p>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 shadow">
+                        <p class="text-gray-600 text-sm mb-1">Numbers Cleared</p>
+                        <p class="text-2xl font-bold text-purple-600">{{ completeGameScore.numberBowlingScore }} / 10</p>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 shadow">
+                        <p class="text-gray-600 text-sm mb-1">Total Time</p>
+                        <p class="text-2xl font-bold text-blue-600">{{ completeGameScore.totalTime }}</p>
+                    </div>
+                </div>
+
+                <!-- <p class="text-gray-600 text-sm">Submitting your results...</p> -->
             </div>
         </div>
     </div>
