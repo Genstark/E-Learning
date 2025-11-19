@@ -2,39 +2,129 @@
 <script setup>
 import { ref, computed, watch, onUnmounted, onBeforeMount } from 'vue';
 import Header from '@/components/Header.vue';
-import Footer from '@/components/Footer.vue';
 import { evaluate } from "mathjs";
 import { useRouter } from 'vue-router';
+
+const GAME_STATE_KEY = 'numberBowlingGameState';
+const LAST_SUBMISSION_DATE_KEY = 'lastSubmissionDate';
+
+// Function to check if it's a new day
+function isNewDay() {
+    const lastDate = localStorage.getItem(LAST_SUBMISSION_DATE_KEY);
+    const today = new Date().toISOString().slice(0, 10);
+    return !lastDate || lastDate !== today;
+}
+
+// Function to save game state to localStorage
+function saveGameState() {
+    // Agar game finish ho gaya hai to localStorage save mat karo
+    if (gameFinished.value) {
+        return;
+    }
+
+    const gameState = {
+        targetNumbers: targetNumbers.value,
+        dice: dice.value,
+        userInput: userInput.value,
+        message: message.value,
+        startTime: startTime.value,
+        elapsedTime: elapsedTime.value,
+        totalGameTime: totalGameTime.value,
+        gameFinished: gameFinished.value,
+        gameStarted: gameStarted.value,
+        currentQuestionIndex: currentQuestionIndex.value,
+        score: score.value,
+        totalSolvedNumber: totalSolvedNumber.value,
+        questions: questions.value,
+    };
+    localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState));
+}
+
+// Function to restore game state from localStorage
+function restoreGameState() {
+    // Pehle check karo ki new day hai ya nahi
+    if (!isNewDay()) {
+        const savedState = localStorage.getItem(GAME_STATE_KEY);
+        if (savedState) {
+            const gameState = JSON.parse(savedState);
+            // Agar game already finished hai to restore mat karo
+            if (gameState.gameFinished) {
+                localStorage.removeItem(GAME_STATE_KEY);
+                return;
+            }
+
+            targetNumbers.value = gameState.targetNumbers;
+            dice.value = gameState.dice;
+            userInput.value = gameState.userInput;
+            message.value = gameState.message;
+            startTime.value = gameState.startTime;
+            elapsedTime.value = gameState.elapsedTime;
+            totalGameTime.value = gameState.totalGameTime;
+            gameFinished.value = gameState.gameFinished;
+            gameStarted.value = gameState.gameStarted;
+            currentQuestionIndex.value = gameState.currentQuestionIndex;
+            score.value = gameState.score;
+            totalSolvedNumber.value = gameState.totalSolvedNumber;
+            questions.value = gameState.questions;
+
+            // Restore timer if it was running
+            if (gameStarted.value && !gameFinished.value) {
+                timerInterval = setInterval(() => {
+                    elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
+                }, 1000);
+            }
+        }
+    } else {
+        // New day hai to localStorage clear kar do
+        localStorage.removeItem(GAME_STATE_KEY);
+    }
+}
 
 onUnmounted(() => {
     if (timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;
     }
+    saveGameState();
 });
 
-const pending = ref(true);
+const pending = ref(false);
+const router = useRouter();
+const completeGameScore = ref(null);
 
 onBeforeMount(async () => {
     const user = localStorage.getItem('user');
-    const response = await fetch(`${process.env.VUE_APP_URL}/repeat-check/${user}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include'
-    });
-    const data = await response.json();
-    if (data.ok) {
-        console.warn('Already Done');
-        // router.push({ name: 'user-home', params: { id: localStorage.getItem('user') } });
+
+    try {
+        const response = await fetch(`${process.env.VUE_APP_URL}/repeat-check/${user}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+        });
+        const data = await response.json();
+        console.log('Repeat Check Response:', data.data);
+        if (data.ok) {
+            // Already done today - redirect to home
+            console.warn('Already Done Today');
+            alert('You have already completed today\'s tasks!');
+            // router.push({ name: 'user-home', params: { id: user } });
+            completeGameScore.value = data.data[data.data.length - 1];
+            console.log('Complete Game Score:', completeGameScore.value);
+            pending.value = false;
+            gameFinished.value = true;
+            return;
+        } else {
+            // New day ya abhi nahi kiya - restore state agar hai to
+            console.log('New Day or Not Done Yet - Loading Game');
+            restoreGameState();
+            pending.value = true;
+        }
+    } catch (error) {
+        console.error('Error checking repeat status:', error);
+        restoreGameState();
         pending.value = true;
-    }
-    else {
-        pending.value = true;
-        console.log('Not Done Yet');
     }
 });
-
-const router = useRouter();
 
 const targetNumbers = ref(
     Array.from({ length: 10 }, (_, i) => ({ value: i + 1, disabled: false }))
@@ -117,7 +207,6 @@ const questions = ref([
     }
 ]);
 
-
 const currentQuestionIndex = ref(0);
 const selectedAnswer = ref(null);
 const score = ref(0);
@@ -150,88 +239,90 @@ const formatTime = (timeInSeconds) => {
 
 // Enhanced startGame function with detailed logging
 async function startGame() {
-    if (loading.value) return; // Prevent multiple calls
+    if (loading.value || gameStarted.value) return;
 
     loading.value = true;
     message.value = 'Loading game data...';
 
-    // Timer start karo
+    // Timer start
     if (!startTime.value) {
-        startTime.value = Date.now();
+        startTime.value = Date.now() - (elapsedTime.value * 1000);
         timerInterval = setInterval(() => {
             elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
         }, 1000);
     }
     gameStarted.value = true;
 
-    // API se data fetch karo
-    try {
-        console.log(`🔄 Calling API: ${process.env.VUE_APP_URL}/roll-dice`);
-        const response = await fetch(`${process.env.VUE_APP_URL}/roll-dice`);
+    // API se data fetch (only if dice are not already loaded)
+    if (dice.value.length === 0) {
+        try {
+            console.log(`🔄 Calling API: ${process.env.VUE_APP_URL}/roll-dice`);
+            const response = await fetch(`${process.env.VUE_APP_URL}/roll-dice`);
 
-        console.log('📊 Response Status:', response.status);
-        console.log('📊 Response OK:', response.ok);
+            console.log('📊 Response Status:', response.status);
+            console.log('📊 Response OK:', response.ok);
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('📦 Full API Response:', data);
-
-        // Dice handle karo
-        if (data && data.result && Array.isArray(data.result)) {
-            dice.value = [...data.result];
-            message.value = 'API data loaded - Dice updated';
-        } else {
-            dice.value = [1, 2, 3, 4];
-            message.value = 'Using default dice';
-        }
-
-        // Questions handle karo
-        if (data && data.questions) {
-            let parsedQuestions = null;
-            // Agar string hai toh parse karo
-            if (typeof data.questions === 'string') {
-                try {
-                    const parsed = JSON.parse(data.questions);
-                    // Agar parsed object mein questions property hai toh use karo
-                    if (Array.isArray(parsed.questions)) {
-                        parsedQuestions = parsed.questions;
-                    } else if (Array.isArray(parsed)) {
-                        parsedQuestions = parsed;
-                    }
-                } catch (parseError) {
-                    console.error('❌ Failed to parse questions string:', parseError);
-                }
-            } else if (Array.isArray(data.questions)) {
-                parsedQuestions = data.questions;
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
-            if (parsedQuestions && Array.isArray(parsedQuestions) && parsedQuestions.length > 0) {
-                questions.value = [...parsedQuestions];
-                currentQuestionIndex.value = 0;
-                selectedAnswer.value = null;
-                answerFeedback.value = null;
-                score.value = 0;
-                message.value = `Questions loaded: ${questions.value.length} questions`; // temp
+            const data = await response.json();
+            console.log('📦 Full API Response:', data);
+
+            // Dice handle karo
+            if (data && data.result && Array.isArray(data.result)) {
+                dice.value = [...data.result];
+                message.value = 'API data loaded - Dice updated';
             } else {
-                message.value = 'Questions parsing failed - using defaults';
+                dice.value = [1, 2, 3, 4];
+                message.value = 'Using default dice';
             }
-        } else {
-            message.value = 'No questions from API - using defaults';
+
+            // Questions handle karo
+            if (data && data.questions) {
+                let parsedQuestions = null;
+                if (typeof data.questions === 'string') {
+                    try {
+                        const parsed = JSON.parse(data.questions);
+                        if (Array.isArray(parsed.questions)) {
+                            parsedQuestions = parsed.questions;
+                        } else if (Array.isArray(parsed)) {
+                            parsedQuestions = parsed;
+                        }
+                    } catch (parseError) {
+                        console.error('❌ Failed to parse questions string:', parseError);
+                    }
+                } else if (Array.isArray(data.questions)) {
+                    parsedQuestions = data.questions;
+                }
+
+                if (parsedQuestions && Array.isArray(parsedQuestions) && parsedQuestions.length > 0) {
+                    questions.value = [...parsedQuestions];
+                    currentQuestionIndex.value = 0;
+                    selectedAnswer.value = null;
+                    answerFeedback.value = null;
+                    score.value = 0;
+                    message.value = `Questions loaded: ${questions.value.length} questions`;
+                } else {
+                    message.value = 'Questions parsing failed - using defaults';
+                }
+            } else {
+                message.value = 'No questions from API - using defaults';
+            }
+        } catch (error) {
+            console.error('🚨 API Error:', error);
+            dice.value = [1, 2, 3, 4];
+            message.value = `API Error: ${error.message}`;
+        } finally {
+            loading.value = false;
         }
-    } catch (error) {
-        console.error('🚨 API Error:', error);
-        dice.value = [1, 2, 3, 4];
-        message.value = `API Error: ${error.message}`;
-    } finally {
+    } else {
         loading.value = false;
     }
 }
 
 async function submitAnswer() {
-    if (selectedAnswer.value === null) return;
+    if (selectedAnswer.value === null || gameFinished.value) return;
 
     const isCorrect = selectedAnswer.value === currentQuestion.value.correctAnswer;
 
@@ -248,51 +339,59 @@ async function submitAnswer() {
         };
     }
 
-    setTimeout(() => {
-        if (currentQuestionIndex.value < questionsCount.value - 1) {
+    const isLastQuestion = currentQuestionIndex.value === questionsCount.value - 1;
+
+    if (isLastQuestion) {
+        // Stop timer
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        totalGameTime.value = elapsedTime.value;
+        gameFinished.value = true;
+
+        setTimeout(async () => {
+            alert(`Quiz completed! Your score: ${score.value}/${questionsCount.value}\nNumber of questions solved: ${totalSolvedNumber.value}\nTotal time: ${formatTime(totalGameTime.value)}`);
+
+            if (bothGamesComplete.value) {
+                try {
+                    const todayDate = new Date().toISOString().slice(0, 10);
+                    const response = await fetch(`${process.env.VUE_APP_URL}/submit/daily-tasks`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            mcqScore: Number(score.value),
+                            numberBowlingScore: Number(totalSolvedNumber.value),
+                            totalScore: Number(score.value + totalSolvedNumber.value),
+                            totalTime: formatTime(totalGameTime.value),
+                            userName: localStorage.getItem('user'),
+                            submissionDate: todayDate,
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (data.ok) {
+                        // Successfully submitted - clear localStorage and save submission date
+                        localStorage.removeItem(GAME_STATE_KEY);
+                        localStorage.setItem(LAST_SUBMISSION_DATE_KEY, todayDate);
+                        alert('Daily tasks submitted successfully!');
+                        router.push({ name: 'user-home', params: { id: localStorage.getItem('user') } });
+                    } else {
+                        alert('Failed to submit daily tasks.');
+                    }
+                } catch (error) {
+                    console.error('Submit error:', error);
+                    alert('Failed to submit daily tasks.');
+                }
+            }
+        }, 1500);
+    } else {
+        setTimeout(() => {
             currentQuestionIndex.value++;
             selectedAnswer.value = null;
             answerFeedback.value = null;
-        } else {
-            if (bothGamesComplete.value && timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
-
-            totalGameTime.value = elapsedTime.value;
-            gameFinished.value = true;
-
-            alert(`Quiz completed! Your score: ${score.value}/${questionsCount.value}\nNumber of questions solved: ${totalSolvedNumber.value}\nTotal time: ${formatTime(totalGameTime.value)}`);
-        }
-    }, 1000);
-
-    // send to server
-    if (bothGamesComplete.value) {
-        try {
-            const response = await fetch(`${process.env.VUE_APP_URL}/submit/daily-tasks`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    mcqScore: Number(score.value),
-                    numberBowlingScore: Number(totalSolvedNumber.value),
-                    totalScore: Number(score.value + totalSolvedNumber.value),
-                    totalTime: formatTime(totalGameTime.value),
-                    userName: localStorage.getItem('user'),
-                    submissionDate: new Date().toISOString().slice(0, 10),
-                })
-            });
-
-            const data = await response.json();
-            if (data.ok) {
-                alert('Daily tasks submitted successfully!');
-                router.push({ name: 'user-home', params: { id: localStorage.getItem('user') } });
-            } else {
-                alert('Failed to submit daily tasks.');
-            }
-        } catch (error) {
-            console.error('Submit error:', error);
-            alert('Failed to submit daily tasks.');
-        }
+        }, 1000);
     }
 }
 
@@ -308,8 +407,6 @@ async function validateExpression() {
             throw new Error('Invalid characters used.');
         }
 
-        // Reject inputs that are just a number or that don't contain any operator (+ - * /)
-        // This prevents accepting a single digit (or single number) without an expression.
         if (!/[+\-*/]/.test(expr)) {
             message.value = 'Please enter a valid expression containing at least one operator (e.g. (6+6)/3).';
             return;
@@ -327,7 +424,6 @@ async function validateExpression() {
     }
 
     const usedNumbers = (userInput.value.match(/\d+/g) || []).map(Number);
-    // Ensure dice values are numeric so comparisons succeed for single-digit inputs
     const diceCopy = [...dice.value].map(Number);
 
     for (const num of usedNumbers) {
@@ -339,28 +435,49 @@ async function validateExpression() {
         diceCopy.splice(i, 1);
     }
 
-    // Find a target matching the evaluated result that is not already disabled
     const matchedTarget = targetNumbers.value.find(t => t.value === result && !t.disabled);
     if (!matchedTarget) {
         message.value = 'No matching target available to clear.';
         return;
     }
 
-    // Mark the target as cleared and update counters/state
     totalSolvedNumber.value += 1;
     matchedTarget.disabled = true;
     message.value = `Great! You cleared ${result}.`;
     userInput.value = '';
 }
 
-function endGame() {
-    targetNumbers.value.forEach(n => n.disabled = true);
+function endBowling() {
+    if (confirm('Are you sure you want to skip remaining numbers and move to MCQ questions?')) {
+        // Saare remaining numbers ko disabled kar do
+        targetNumbers.value.forEach(n => n.disabled = true);
+        message.value = 'Number Bowling ended. Now solve MCQ questions!';
+        userInput.value = '';
+    }
+}
+
+function quitGame() {
+    if (confirm('Are you sure you want to quit the entire game? All progress will be lost and you will be redirected to home.')) {
+        // Timer stop karo
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        // Sab kuch clear kar do
+        localStorage.removeItem(GAME_STATE_KEY);
+        localStorage.removeItem(LAST_SUBMISSION_DATE_KEY);
+
+        // Home page pe redirect kar do
+        alert('Game quit. Redirecting to home page...');
+        router.push({ name: 'user-home', params: { id: localStorage.getItem('user') } });
+    }
 }
 </script>
 
 <template>
-    <div v-if="true">
-        <Header />
+    <Header />
+    <div v-if="pending">
         <div class="min-h-screen bg-gray-100 p-4">
             <div class="max-w-6xl mx-auto grid grid-cols-1 gap-8">
 
@@ -382,10 +499,10 @@ function endGame() {
                     <!-- Targets -->
                     <div class="grid grid-cols-5 gap-2 sm:gap-3 md:gap-4 mb-6">
                         <div v-for="num in targetNumbers" :key="num.value" :class="[
-                            'w-10 h-10 text-sm rounded-full flex items-center justify-center font-bold transition-all', // mobile (UNCHANGED)
-                            'sm:w-12 sm:h-12 sm:text-base',   // tablet-ish
-                            'md:w-12 md:h-12 md:text-lg',     // small desktop / large tablet
-                            'lg:w-14 lg:h-14 lg:text-xl',     // larger desktop
+                            'w-10 h-10 text-sm rounded-full flex items-center justify-center font-bold transition-all',
+                            'sm:w-12 sm:h-12 sm:text-base',
+                            'md:w-12 md:h-12 md:text-lg',
+                            'lg:w-14 lg:h-14 lg:text-xl',
                             num.disabled
                                 ? 'bg-gray-300 text-gray-500 line-through scale-95 animate-cleared-target'
                                 : 'bg-purple-100 text-purple-800 border border-purple-400 hover:bg-purple-200 hover:scale-105'
@@ -393,8 +510,6 @@ function endGame() {
                             {{ num.value }}
                         </div>
                     </div>
-
-
 
                     <!-- Input -->
                     <input type="text" v-model="userInput" placeholder="e.g. (6+6)/3"
@@ -404,17 +519,17 @@ function endGame() {
                     <!-- Submit Button -->
                     <div class="flex space-x-4">
                         <button @click="startGame" :disabled="gameStarted"
-                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md shadow">
-                            {{ gameStarted ? '🎲 Game Started' : '▶️ Start' }}
+                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md shadow disabled:opacity-50 disabled:cursor-not-allowed">
+                            {{ gameStarted ? '🎲 Game Started' : '▶️ Start Game' }}
                         </button>
-                        <button @click="endGame" :disabled="!gameStarted" :class="{ 'opacity-50': !gameStarted }"
-                            class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md shadow">
+                        <button @click="endBowling" :disabled="!gameStarted || bowlingComplete"
+                            class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md shadow disabled:opacity-50 disabled:cursor-not-allowed">
                             ⏹️ End Game
                         </button>
                     </div>
 
                     <!-- Message -->
-                    <p class="text-sm text-gray-600 italic mb-2">{{ message }}</p>
+                    <p class="text-sm text-gray-600 italic mb-2 mt-4">{{ message }}</p>
                 </div>
 
                 <!-- Question Answer Container -->
@@ -436,7 +551,7 @@ function endGame() {
                     </h2>
 
                     <!-- Question Display -->
-                    <div v-if="currentQuestion" class="w-full mb-6">
+                    <div v-if="currentQuestion && !gameFinished" class="w-full mb-6">
                         <div class="bg-gray-50 rounded-lg p-4 mb-4">
                             <h3 class="text-lg font-semibold text-gray-800 mb-3">
                                 Question {{ currentQuestionIndex + 1 }} of {{ questionsCount }}
@@ -448,10 +563,11 @@ function endGame() {
                                 <div v-for="(option, index) in currentQuestion.options" :key="index"
                                     class="flex items-center">
                                     <input type="radio" :id="'option' + index" :name="'question' + currentQuestionIndex"
-                                        :value="index" v-model="selectedAnswer" :disabled="!bowlingComplete"
+                                        :value="index" v-model="selectedAnswer"
+                                        :disabled="!bowlingComplete || gameFinished"
                                         class="mr-3 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50">
                                     <label :for="'option' + index" :class="[
-                                        bowlingComplete ? 'text-gray-700 cursor-pointer hover:text-indigo-600' : 'text-gray-400 cursor-not-allowed'
+                                        bowlingComplete && !gameFinished ? 'text-gray-700 cursor-pointer hover:text-indigo-600' : 'text-gray-400 cursor-not-allowed'
                                     ]">
                                         {{ option }}
                                     </label>
@@ -460,8 +576,8 @@ function endGame() {
                         </div>
 
                         <!-- Submit Answer Button -->
-                        <button @click="submitAnswer" :disabled="selectedAnswer === null"
-                            class="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md shadow transition-colors">
+                        <button @click="submitAnswer" :disabled="selectedAnswer === null || gameFinished"
+                            class="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md shadow transition-colors disabled:cursor-not-allowed">
                             Submit Answer
                         </button>
 
@@ -469,6 +585,32 @@ function endGame() {
                         <div v-if="answerFeedback" class="mt-4 p-3 rounded-md"
                             :class="answerFeedback.correct ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
                             {{ answerFeedback.message }}
+                        </div>
+                    </div>
+
+                    <!-- Game Completed Message -->
+                    <div v-if="gameFinished" class="w-full mb-6">
+                        <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 text-center">
+                            <div class="text-6xl mb-4">🎉</div>
+                            <h3 class="text-2xl font-bold text-green-800 mb-3">Congratulations!</h3>
+                            <p class="text-gray-700 text-lg mb-6">You've completed all tasks successfully!</p>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                <div class="bg-white rounded-lg p-4 shadow">
+                                    <p class="text-gray-600 text-sm mb-1">MCQ Score</p>
+                                    <p class="text-2xl font-bold text-indigo-600">{{ score }} / {{ questionsCount }}</p>
+                                </div>
+                                <div class="bg-white rounded-lg p-4 shadow">
+                                    <p class="text-gray-600 text-sm mb-1">Numbers Cleared</p>
+                                    <p class="text-2xl font-bold text-purple-600">{{ totalSolvedNumber }} / 10</p>
+                                </div>
+                                <div class="bg-white rounded-lg p-4 shadow">
+                                    <p class="text-gray-600 text-sm mb-1">Total Time</p>
+                                    <p class="text-2xl font-bold text-blue-600">{{ formatTime(totalGameTime) }}</p>
+                                </div>
+                            </div>
+
+                            <p class="text-gray-600 text-sm">Submitting your results...</p>
                         </div>
                     </div>
 
@@ -498,22 +640,55 @@ function endGame() {
                         </button>
                     </div>
 
+                    <!-- Quit Game Button -->
+                    <div class="w-full mt-4">
+                        <button @click="quitGame" :disabled="!gameStarted || gameFinished"
+                            class="w-full bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md shadow transition-colors disabled:cursor-not-allowed">
+                            ❌ Quit Entire Game
+                        </button>
+                    </div>
+
                     <!-- Score and Total Time -->
                     <div class="w-full mt-4 text-center">
                         <p class="text-sm text-gray-600">
                             MCQ Score: {{ score }} / {{ questionsCount }}
                         </p>
                         <p v-if="totalGameTime > 0" class="text-sm font-semibold text-indigo-700 mt-2">
-                            Total Game Time: {{ Math.floor(totalGameTime / 60) }}:{{ String(totalGameTime %
-                                60).padStart(2, '0') }}
+                            Total Game Time: {{ formatTime(totalGameTime) }}
                         </p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div v-else></div>
-    <Footer />
+    <div v-if="gameFinished">
+        <!-- Game Completed Message -->
+        <div v-if="gameFinished" class="w-full mb-6">
+            <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 text-center">
+                <div class="text-6xl mb-4">🎉</div>
+                <h3 class="text-2xl font-bold text-green-800 mb-3">Congratulations!</h3>
+                <p class="text-gray-700 text-lg mb-6">You've completed all tasks successfully!</p>
+                <p class="text-gray-700 text-lg mb-6">Today Score</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-white rounded-lg p-4 shadow">
+                        <p class="text-gray-600 text-sm mb-1">MCQ Score</p>
+                        <p class="text-2xl font-bold text-indigo-600">{{ completeGameScore.mcqScore }} / {{ questionsCount }}</p>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 shadow">
+                        <p class="text-gray-600 text-sm mb-1">Numbers Cleared</p>
+                        <p class="text-2xl font-bold text-purple-600">{{ completeGameScore.numberBowlingScore }} / 10</p>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 shadow">
+                        <p class="text-gray-600 text-sm mb-1">Total Time</p>
+                        <p class="text-2xl font-bold text-blue-600">{{ completeGameScore.totalTime }}</p>
+                    </div>
+                </div>
+
+                <!-- <p class="text-gray-600 text-sm">Submitting your results...</p> -->
+            </div>
+        </div>
+    </div>
 </template>
 
 <style scoped></style>
