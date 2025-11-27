@@ -82,8 +82,6 @@ app.get('/api/validate-token', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/reset-email', async (req, res) => {
-    // collect userName and oldEmail and newEmail from req.body
-    // then find userName with oldEmail in database then update email to newEmail
     if (req.body.task === 'confirmation') {
         const { userName, userEmail } = req.body;
         const findUser = await client.db("E-Learning").collection("users").findOne({ name: userName, email: userEmail });
