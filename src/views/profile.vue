@@ -1,8 +1,10 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import Header from '@/components/Header.vue';
 
+const router = useRouter();
 const username = localStorage.getItem('user') || '';
 const profile = ref(null);
 const loading = ref(false);
@@ -36,6 +38,10 @@ async function loadProfile() {
     }
 }
 
+function goToResetEmail() {
+    router.push('/reset-email');
+}
+
 onMounted(() => {
     loadProfile();
 });
@@ -65,8 +71,7 @@ const totalScore = computed(() => {
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div class="flex items-center gap-4">
                         <!-- Avatar: initials fallback -->
-                        <div
-                            class="flex items-center justify-center bg-blue-100 text-blue-800 rounded-full w-16 h-16 sm:w-20 
+                        <div class="flex items-center justify-center bg-blue-100 text-blue-800 rounded-full w-16 h-16 sm:w-20 
                             sm:h-20 text-xl font-semibold border-2 border-blue-300">
                             {{ (displayName || 'U').slice(0, 1).toUpperCase() }}
                         </div>
@@ -77,15 +82,21 @@ const totalScore = computed(() => {
                     </div>
 
                     <div class="flex items-center gap-3">
-                        <button class="px-4 py-2 bg-blue-600 text-white rounded w-full sm:w-auto text-sm"
+                        <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded w-full sm:w-auto text-sm transition-colors"
                             @click="loadProfile">
                             Refresh
+                        </button>
+                        <button class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded w-full sm:w-auto text-sm transition-colors"
+                            @click="goToResetEmail">
+                            Reset Email
                         </button>
                     </div>
                 </div>
 
+                <!-- Profile Stats -->
                 <div class="mt-6">
                     <div v-if="loading" class="text-sm text-gray-600">Loading profile…</div>
+                    
                     <div v-else>
                         <div v-if="error" class="mb-4 text-sm text-red-600">{{ error }}</div>
 

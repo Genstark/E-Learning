@@ -102,20 +102,16 @@ onBeforeMount(async () => {
             credentials: 'include'
         });
         const data = await response.json();
-        console.log('Repeat Check Response:', data.data);
         if (data.ok) {
             // Already done today - redirect to home
-            console.warn('Already Done Today');
             alert('You have already completed today\'s tasks!');
             // router.push({ name: 'user-home', params: { id: user } });
             completeGameScore.value = data.data[data.data.length - 1];
-            console.log('Complete Game Score:', completeGameScore.value);
             pending.value = false;
             gameFinished.value = true;
             return;
         } else {
             // New day ya abhi nahi kiya - restore state agar hai to
-            console.log('New Day or Not Done Yet - Loading Game');
             restoreGameState();
             pending.value = true;
         }
@@ -256,18 +252,13 @@ async function startGame() {
     // API se data fetch (only if dice are not already loaded)
     if (dice.value.length === 0) {
         try {
-            console.log(`🔄 Calling API: ${process.env.VUE_APP_URL}/roll-dice`);
             const response = await fetch(`${process.env.VUE_APP_URL}/roll-dice`);
-
-            console.log('📊 Response Status:', response.status);
-            console.log('📊 Response OK:', response.ok);
 
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
             const data = await response.json();
-            console.log('📦 Full API Response:', data);
 
             // Dice handle karo
             if (data && data.result && Array.isArray(data.result)) {
@@ -663,7 +654,7 @@ function quitGame() {
     </div>
     <div v-if="gameFinished">
         <!-- Game Completed Message -->
-        <div v-if="gameFinished" class="w-full mb-6">
+        <div class="w-full mb-6">
             <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 text-center">
                 <div class="text-6xl mb-4">🎉</div>
                 <h3 class="text-2xl font-bold text-green-800 mb-3">Congratulations!</h3>

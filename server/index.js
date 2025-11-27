@@ -81,6 +81,37 @@ app.get('/api/validate-token', authenticateToken, async (req, res) => {
     }
 });
 
+app.post('/api/reset-email', async (req, res) => {
+    // collect userName and oldEmail and newEmail from req.body
+    // then find userName with oldEmail in database then update email to newEmail
+    if (req.body.task === 'confirmation') {
+        const { userName, userEmail } = req.body;
+        const findUser = await client.db("E-Learning").collection("users").findOne({ name: userName, email: userEmail });
+        if (!findUser) {
+            return res.status(400).json({ error: 'User not found', ok: false });
+        }
+        res.status(200).json({ message: 'got the message', ok: true, userName: findUser.name, userEmail: findUser.email });
+    }
+
+    if (req.body.task === 'resetEmail') {
+        const { userName, userEmail, confirmEmail } = req.body;
+        const findUser = await client.db("E-Learning").collection("users").findOne({ userName: userName, userEmail: userEmail });
+        if (!findUser) {
+            return res.status(400).json({ error: 'User not found', ok: false });
+        }
+        try {
+            await client.db("E-Learning").collection("users").updateOne(
+                { userName: userName, userEmail: userEmail },
+                { $set: { userEmail: confirmEmail } }
+            );
+            res.status(200).json({ message: 'Email updated successfully', ok: true });
+        } catch (error) {
+            console.error("Error updating email:", error);
+            res.status(500).json({ error: 'Internal server error', ok: false });
+        }
+    }
+});
+
 app.post('/api/reset-password', async (req, res) => {
     if (req.body.task === 'confirmation') {
         const { userEmail, userName } = req.body;
@@ -191,21 +222,19 @@ app.get('/api/roll-dice', async (req, res) => {
     try {
         const collectTaskData = await client.db("E-Learning").collection("daily-task-data").find().toArray();
         const today = new Date().toISOString().slice(0, 10);
-        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
         const todayDoc = collectTaskData.find(d => d.date === today);
-        const yesterdayDoc = collectTaskData.find(d => d.date === yesterday);
 
         if (todayDoc) {
-            // Use today's stored data
+            // Use today's stored data and return immediately
             rolldicenumber = todayDoc.rolldicenumber || [];
             questions = todayDoc.questions || [];
+            return res.status(200).json({ result: rolldicenumber, questions, ok: true });
         } else {
-            // If yesterday exists, remove it and generate fresh data for today
-            if (yesterdayDoc) {
-                await client.db("E-Learning").collection("daily-task-data").deleteMany(); // Clear all previous data
-            }
-            // Generate new data for today and store/update it
+            // No entry for today → clear all previous data and generate fresh data for today
+            await client.db("E-Learning").collection("daily-task-data").deleteMany({});
+
+            // Generate new data for today and store it
             rolldicenumber = await rollDice();
             questions = await googleAPI.generateText("generate most tough and tough scientific questions");
             while (questions.length < 10) {
@@ -214,11 +243,13 @@ app.get('/api/roll-dice', async (req, res) => {
                     break;
                 }
             }
+            console.log('Storing new daily task data for today');
             await client.db("E-Learning").collection("daily-task-data").insertOne(
                 { date: today, rolldicenumber, questions }
             );
+            console.log('New daily task data stored successfully');
+            return res.status(200).json({ result: rolldicenumber, questions, ok: true });
         }
-        res.status(200).json({ result: rolldicenumber, questions, ok: true });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
@@ -343,7 +374,7 @@ app.listen(PORT, () => {
     console.log(`Server is running on port http://localhost:${PORT}`);
 });
 
-const canRunNgrok = true; // Set to true if you want to run ngrok
+const canRunNgrok = false; // Set to true if you want to run ngrok
 if (canRunNgrok) {
     ngrok.connect({ addr: PORT, authtoken: process.env.NGROK })
         .then(listener => console.log(`Ingress established at: ${listener.url()}`));
