@@ -37,7 +37,7 @@ async function checkConfirmation() {
 
 async function resetEmail() {
     if (newEmail.value !== confirmEmail.value) {
-        alert('Passwords do not match!');
+        alert('Email do not match!');
         return;
     }
     console.log('Resetting password for:', userEmail.value, userName.value);
@@ -55,7 +55,7 @@ async function resetEmail() {
     });
     const data = await response.json();
     if (data.ok) {
-        alert('Password reset successful! Please log in with your new password.');
+        alert('Email reset successfull! Please log in with your new Email.');
         // Redirect to login page
         router.push('/login');
     } else {
@@ -67,7 +67,7 @@ async function resetEmail() {
 <template>
     <div class="min-h-screen flex items-center justify-center bg-gray-100">
         <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
-            <h2 class="text-2xl font-bold mb-6 text-center">Reset Password</h2>
+            <h2 class="text-2xl font-bold mb-6 text-center">Reset Email</h2>
             <form @submit.prevent class="space-y-4">
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>

@@ -86,6 +86,7 @@ app.post('/api/reset-email', async (req, res) => {
         const { userName, userEmail } = req.body;
         const findUser = await client.db("E-Learning").collection("users").findOne({ name: userName, email: userEmail });
         if (!findUser) {
+            console.log('user not found');
             return res.status(400).json({ error: 'User not found', ok: false });
         }
         res.status(200).json({ message: 'got the message', ok: true, userName: findUser.name, userEmail: findUser.email });
@@ -93,14 +94,10 @@ app.post('/api/reset-email', async (req, res) => {
 
     if (req.body.task === 'resetEmail') {
         const { userName, userEmail, confirmEmail } = req.body;
-        const findUser = await client.db("E-Learning").collection("users").findOne({ userName: userName, userEmail: userEmail });
-        if (!findUser) {
-            return res.status(400).json({ error: 'User not found', ok: false });
-        }
         try {
             await client.db("E-Learning").collection("users").updateOne(
-                { userName: userName, userEmail: userEmail },
-                { $set: { userEmail: confirmEmail } }
+                { email: userEmail },
+                { $set: { email: confirmEmail } }
             );
             res.status(200).json({ message: 'Email updated successfully', ok: true });
         } catch (error) {
