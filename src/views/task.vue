@@ -313,7 +313,7 @@ async function startGame() {
 }
 
 async function submitAnswer() {
-    if (selectedAnswer.value === null || gameFinished.value) return;
+    if (selectedAnswer.value === null || gameFinished.value || !currentQuestion.value) return;
 
     const isCorrect = selectedAnswer.value === currentQuestion.value.correctAnswer;
 
@@ -330,7 +330,7 @@ async function submitAnswer() {
         };
     }
 
-    const isLastQuestion = currentQuestionIndex.value === questionsCount.value - 1;
+    const isLastQuestion = currentQuestionIndex.value >= questions.value.length - 1;
 
     if (isLastQuestion) {
         // Stop timer
@@ -343,7 +343,7 @@ async function submitAnswer() {
         gameFinished.value = true;
 
         setTimeout(async () => {
-            alert(`Quiz completed! Your score: ${score.value}/${questionsCount.value}\nNumber of questions solved: ${totalSolvedNumber.value}\nTotal time: ${formatTime(totalGameTime.value)}`);
+            alert(`Quiz completed! Your score: ${score.value}/${questions.value.length}\nNumber of questions solved: ${totalSolvedNumber.value}\nTotal time: ${formatTime(totalGameTime.value)}`);
 
             if (bothGamesComplete.value) {
                 try {
@@ -382,7 +382,7 @@ async function submitAnswer() {
             currentQuestionIndex.value++;
             selectedAnswer.value = null;
             answerFeedback.value = null;
-        }, 1000);
+        }, 2000);
     }
 }
 
@@ -652,7 +652,7 @@ function quitGame() {
             </div>
         </div>
     </div>
-    <div v-if="gameFinished">
+    <div v-if="gameFinished && completeGameScore">
         <!-- Game Completed Message -->
         <div class="w-full mb-6">
             <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 text-center">

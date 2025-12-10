@@ -23,10 +23,10 @@ const message = ref('');
 // Timer
 const startTime = ref(null);
 const elapsedTime = ref(0);
-const penaltyTime = ref(0); // ✅ separate penalty tracker
+const penaltyTime = ref(0);
 let timerInterval = null;
 
-// Reset penalty countdown
+// Penalty countdown
 const isPenaltyActive = ref(false);
 const penaltyTimeRemaining = ref(0);
 let penaltyInterval = null;
@@ -42,25 +42,42 @@ onMounted(() => {
 const usedTargets = computed(() => targetNumbers.value.filter(n => n.disabled).length);
 
 function rollDice() {
+    // ⚠️ If penalty is active, don't allow rolling
+    if (isPenaltyActive.value) {
+        message.value = `⏳ Wait ${penaltyTimeRemaining.value}s before rolling again!`;
+        return;
+    }
+
     // Start timer if first roll
     if (startTime.value === null) {
         startTime.value = Date.now();
         timerInterval = setInterval(() => {
-            elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000) + penaltyTime.value;
-        }, 1000);
-    }
-
-    // Apply penalty if game is already in progress (some targets cleared)
-    if (startTime.value !== null && usedTargets.value > 0 && usedTargets.value < 10) {
-        penaltyTime.value += 60; // ✅ add 1 min penalty
-        message.value = '⚠️ 1-minute penalty added for rolling dice again!';
-        setTimeout(() => {
-            if (message.value === '⚠️ 1-minute penalty added for rolling dice again!') {
-                message.value = '';
+            const baseTime = Math.floor((Date.now() - startTime.value) / 1000);
+            elapsedTime.value = baseTime + penaltyTime.value;
+        }, 100);
+    } else if (usedTargets.value > 0 && usedTargets.value < 10) {
+        // 🚨 Apply penalty countdown for rolling dice again during game
+        isPenaltyActive.value = true;
+        penaltyTimeRemaining.value = 60;
+        penaltyTime.value += 60;
+        message.value = '⚠️ 1-minute penalty! Wait before rolling again.';
+        
+        penaltyInterval = setInterval(() => {
+            penaltyTimeRemaining.value--;
+            if (penaltyTimeRemaining.value <= 0) {
+                clearInterval(penaltyInterval);
+                penaltyInterval = null;
+                isPenaltyActive.value = false;
+                message.value = 'Penalty ended. You can roll dice now.';
+                setTimeout(() => {
+                    if (message.value === 'Penalty ended. You can roll dice now.') {
+                        message.value = '';
+                    }
+                }, 2000);
             }
         }, 1000);
+        return; // ❌ Don't roll dice until penalty ends
     }
-
 
     // Roll 4 dice
     dice.value = Array.from({ length: 4 }, () => Math.floor(Math.random() * 6) + 1);
@@ -125,6 +142,10 @@ async function validateExpression() {
     if (usedTargets.value === 10 && timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;
+        if (penaltyInterval) {
+            clearInterval(penaltyInterval);
+            penaltyInterval = null;
+        }
 
         const hours = String(Math.floor(elapsedTime.value / 3600)).padStart(2, '0');
         const minutes = String(Math.floor((elapsedTime.value % 3600) / 60)).padStart(2, '0');
@@ -148,19 +169,30 @@ function resetGame() {
     const isGameActive = startTime.value !== null && usedTargets.value > 0 && usedTargets.value < 10;
 
     if (isGameActive) {
-        // penalty apply
+        // 🚨 Apply penalty countdown for reset during game
         isPenaltyActive.value = true;
         penaltyTimeRemaining.value = 60;
+        penaltyTime.value += 60;
         message.value = '⚠️ 1-minute penalty applied for reset!';
+        
+        if (penaltyInterval) {
+            clearInterval(penaltyInterval);
+        }
+        
         penaltyInterval = setInterval(() => {
             penaltyTimeRemaining.value--;
             if (penaltyTimeRemaining.value <= 0) {
                 clearInterval(penaltyInterval);
+                penaltyInterval = null;
                 isPenaltyActive.value = false;
                 message.value = 'Penalty ended. You can now roll dice.';
+                setTimeout(() => {
+                    if (message.value === 'Penalty ended. You can now roll dice.') {
+                        message.value = '';
+                    }
+                }, 2000);
             }
         }, 1000);
-        penaltyTime.value += 60;
         return;
     }
 
@@ -199,6 +231,8 @@ function stop() {
         clearInterval(penaltyInterval);
         penaltyInterval = null;
     }
+    isPenaltyActive.value = false;
+    penaltyTimeRemaining.value = 0;
     startTime.value = null;
     message.value = 'Game stopped. You can reset to start a new game.';
 }
@@ -245,8 +279,12 @@ function stop() {
                             class="flex-1 bg-green-500 hover:bg-green-600 text-white font-medium py-2 rounded-md shadow">
                             ✅ Submit
                         </button>
-                        <button @click="rollDice"
-                            class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 rounded-md shadow">
+                        <button @click="rollDice" :disabled="isPenaltyActive" :class="[
+                            'flex-1 font-medium py-2 rounded-md shadow transition-all',
+                            isPenaltyActive 
+                                ? 'bg-gray-400 cursor-not-allowed opacity-60' 
+                                : 'bg-purple-600 hover:bg-purple-700 text-white'
+                        ]">
                             🎲 Roll Dice
                         </button>
                         <button @click="resetGame"
@@ -260,7 +298,15 @@ function stop() {
                     </div>
 
                     <!-- Message -->
-                    <p class="text-sm text-gray-600 italic mb-2">{{ message }}</p>
+                    <p class="text-sm text-gray-600 italic mb-2 min-h-[20px]">{{ message }}</p>
+
+                    <!-- Penalty Countdown Display -->
+                    <div v-if="isPenaltyActive" class="mb-3 p-3 bg-red-50 border-2 border-red-300 rounded-lg w-full text-center animate-pulse">
+                        <p class="text-red-700 font-bold text-lg">
+                            ⏳ Penalty Active: {{ penaltyTimeRemaining }}s remaining
+                        </p>
+                        <p class="text-red-600 text-xs mt-1">Cannot roll dice or reset until penalty ends</p>
+                    </div>
 
                     <!-- Timer -->
                     <div class="flex flex-col text-sm text-gray-700 text-center">
@@ -271,8 +317,7 @@ function stop() {
                             {{ String(elapsedTime % 60).padStart(2, '0') }}
                         </p>
                         <p v-if="penaltyTime > 0" class="text-red-600 font-bold">
-                            ⏰ Penalty Time: +{{ Math.floor(penaltyTime / 60) }}:{{ String(penaltyTime % 60).padStart(2,
-                                '0') }}
+                            ⏰ Total Penalty: +{{ Math.floor(penaltyTime / 60) }}:{{ String(penaltyTime % 60).padStart(2, '0') }}
                         </p>
                         <p>✅ Cleared: {{ usedTargets }} / 10</p>
                     </div>
@@ -330,7 +375,7 @@ function stop() {
             </li>
             <li>
                 <span class="font-semibold text-purple-700">Penalties: </span>
-                <span>Rolling dice again or resetting mid-game adds a <span class="text-red-600 font-bold">+1 min penalty</span> to your time.</span>
+                <span>Rolling dice again or resetting mid-game adds a <span class="text-red-600 font-bold">+1 min penalty</span> and you must <span class="text-red-600 font-bold">wait 60 seconds</span> before you can roll dice again.</span>
             </li>
             <li>
                 <span class="font-semibold text-purple-700">Finish: </span>
@@ -344,7 +389,7 @@ function stop() {
         </ol>
         <div class="mt-6 flex items-center gap-2 text-indigo-700 font-semibold text-lg">
             <span class="text-xl">💡</span>
-            <span>Tip: Use all dice creatively. Fastest wins!</span>
+            <span>Tip: Use all dice creatively. Avoid penalties for fastest time!</span>
         </div>
     </div>
     <!-- <Footer /> -->

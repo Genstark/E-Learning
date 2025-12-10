@@ -1,7 +1,9 @@
 <script setup></script>
 
 <template>
-	<router-view />
+	<div class="pt-16">
+		<router-view />
+	</div>
 </template>
 
 <style></style>

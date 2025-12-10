@@ -44,7 +44,7 @@ function logout() {
 </script>
 
 <template>
-    <header class="bg-white shadow" :class="{ 'large-text': largeText }">
+    <header class="fixed top-0 left-0 w-full bg-white shadow z-50" :class="{ 'large-text': largeText }">
         <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-3 sm:py-4">
                 <!-- Left: Logo + Nav -->
@@ -52,7 +52,7 @@ function logout() {
                     <h1 class="text-2xl sm:text-3xl font-bold text-primary-600 whitespace-nowrap inline-block">
                         <!-- E-L -->
                         <router-link :to="`/${user}`" class="hover:text-primary-700">
-                            <!-- E-Learning -->
+                            E-Learning
                         </router-link>
                     </h1>
 
