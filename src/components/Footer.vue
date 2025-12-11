@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup></script>
 <template>
-    <footer class="bg-gray-800 text-white py-4 fixed bottom-0 left-0 w-full">
+    <footer class="bg-gray-800 text-white py-4 bottom-0 left-0 w-full">
         <div class="container mx-auto text-center">
             <!-- <p>&copy; 2024 Your Company. All rights reserved.</p> -->
             <p class="cursor-default select-none">Join Group</p>
