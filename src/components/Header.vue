@@ -52,7 +52,7 @@ function logout() {
                     <h1 class="text-2xl sm:text-3xl font-bold text-primary-600 whitespace-nowrap inline-block">
                         <!-- E-L -->
                         <router-link :to="`/${user}`" class="hover:text-primary-700">
-                            E-Learning
+                            <!-- E-Learning -->
                         </router-link>
                     </h1>
 

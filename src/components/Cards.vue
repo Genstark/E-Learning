@@ -12,6 +12,10 @@ const props = defineProps({
         required: true,
     },
 });
+// open external page in blank tab
+const openBlank = (url) => {
+    window.open(url, "_blank");
+};
 </script>
 
 <template>
@@ -28,7 +32,7 @@ const props = defineProps({
                     <h5 class="text-lg font-semibold text-gray-800 mb-2">{{ card.title }}</h5>
                     <p class="text-sm text-gray-600 font-medium">{{ card.description }}</p>
                     <div class="mt-4">
-                        <button v-if="card.blank" @click="window.open(card.page, '_blank')"
+                        <button v-if="card.blank" @click="openBlank(card.page)"
                             class="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
                             Click
                         </button>
