@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
 import Header from '@/components/Header.vue';
-import Footer from '@/components/Footer.vue';
+// import Footer from '@/components/Footer.vue';
 import { onUnmounted, onMounted, ref } from 'vue';
 
 const scores = ref([]);
@@ -50,7 +50,7 @@ onUnmounted(() => {
             </table>
         </div>
     </div>
-    <Footer />
+    <!-- <Footer /> -->
 </template>
 
 <style scoped></style>

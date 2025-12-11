@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
 import Header from '@/components/Header.vue';
-import Footer from '@/components/Footer.vue';
+// import Footer from '@/components/Footer.vue';
 </script>
 <template>
 	<Header />
@@ -62,5 +62,5 @@ import Footer from '@/components/Footer.vue';
 			a tool, it is a companion for building lifelong learning habits in a simple, fun, and motivating way.
 		</p>
 	</div>
-	<Footer />
+	<!-- <Footer /> -->
 </template>
