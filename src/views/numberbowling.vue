@@ -31,6 +31,15 @@ const isPenaltyActive = ref(false);
 const penaltyTimeRemaining = ref(0);
 let penaltyInterval = null;
 
+// Add a new ref to track if game is stopped
+const isStopped = ref(false);
+const gameStarted = ref(false);
+
+// Add refs for roll cooldown
+const isRollCooldown = ref(false);
+const rollCooldownRemaining = ref(0);
+let rollCooldownInterval = null;
+
 // 🎳 Best Scoreboard
 const bestScores = ref([]);
 
@@ -48,20 +57,43 @@ function rollDice() {
         return;
     }
 
-    // Start timer if first roll
+    // ⚠️ If roll cooldown is active, don't allow rolling
+    if (isRollCooldown.value) {
+        message.value = `🎲 Wait ${rollCooldownRemaining.value}s before rolling again!`;
+        return;
+    }
+
+    // 👇 YE LINE ADD KARO - Mark game as started
+    gameStarted.value = true;
+
+    // Start timer if first roll OR resume after stop
     if (startTime.value === null) {
-        startTime.value = Date.now();
+        // Calculate offset: current elapsed time minus penalty already applied
+        const offset = elapsedTime.value - penaltyTime.value;
+        startTime.value = Date.now() - (offset * 1000); // Adjust start time to preserve elapsed time
+
         timerInterval = setInterval(() => {
             const baseTime = Math.floor((Date.now() - startTime.value) / 1000);
             elapsedTime.value = baseTime + penaltyTime.value;
         }, 100);
+
+        // Clear stopped state
+        if (isStopped.value) {
+            isStopped.value = false;
+            message.value = 'Game resumed!';
+            setTimeout(() => {
+                if (message.value === 'Game resumed!') {
+                    message.value = '';
+                }
+            }, 2000);
+        }
     } else if (usedTargets.value > 0 && usedTargets.value < 10) {
         // 🚨 Apply penalty countdown for rolling dice again during game
         isPenaltyActive.value = true;
         penaltyTimeRemaining.value = 60;
         penaltyTime.value += 60;
         message.value = '⚠️ 1-minute penalty! Wait before rolling again.';
-        
+
         penaltyInterval = setInterval(() => {
             penaltyTimeRemaining.value--;
             if (penaltyTimeRemaining.value <= 0) {
@@ -76,7 +108,7 @@ function rollDice() {
                 }, 2000);
             }
         }, 1000);
-        return; // ❌ Don't roll dice until penalty ends
+        return; // ⛔ Don't roll dice until penalty ends
     }
 
     // Roll 4 dice
@@ -85,6 +117,23 @@ function rollDice() {
     setTimeout(() => {
         animatingDice.value = false;
     }, 500);
+
+    // 🎲 Start 1-minute cooldown after rolling dice
+    isRollCooldown.value = true;
+    rollCooldownRemaining.value = 60;
+
+    if (rollCooldownInterval) {
+        clearInterval(rollCooldownInterval);
+    }
+
+    rollCooldownInterval = setInterval(() => {
+        rollCooldownRemaining.value--;
+        if (rollCooldownRemaining.value <= 0) {
+            clearInterval(rollCooldownInterval);
+            rollCooldownInterval = null;
+            isRollCooldown.value = false;
+        }
+    }, 1000);
 }
 
 async function validateExpression() {
@@ -166,19 +215,25 @@ async function validateExpression() {
 }
 
 function resetGame() {
+    // ⚠️ Check if game needs to be stopped first
+    if (startTime.value !== null && !isStopped.value) {
+        message.value = '⚠️ Please click "Stop" button first before resetting the game!';
+        return;
+    }
+
     const isGameActive = startTime.value !== null && usedTargets.value > 0 && usedTargets.value < 10;
 
-    if (isGameActive) {
+    if (isGameActive && !isStopped.value) {
         // 🚨 Apply penalty countdown for reset during game
         isPenaltyActive.value = true;
         penaltyTimeRemaining.value = 60;
         penaltyTime.value += 60;
         message.value = '⚠️ 1-minute penalty applied for reset!';
-        
+
         if (penaltyInterval) {
             clearInterval(penaltyInterval);
         }
-        
+
         penaltyInterval = setInterval(() => {
             penaltyTimeRemaining.value--;
             if (penaltyTimeRemaining.value <= 0) {
@@ -203,7 +258,7 @@ function resetGame() {
     }));
     dice.value = [];
     userInput.value = '';
-    message.value = '';
+    message.value = 'Game reset successfully!';
     animatingDice.value = false;
 
     if (timerInterval) {
@@ -214,12 +269,28 @@ function resetGame() {
         clearInterval(penaltyInterval);
         penaltyInterval = null;
     }
+    if (rollCooldownInterval) {
+        clearInterval(rollCooldownInterval);
+        rollCooldownInterval = null;
+    }
+
     startTime.value = null;
     elapsedTime.value = 0;
     penaltyTime.value = 0;
     isPenaltyActive.value = false;
     penaltyTimeRemaining.value = 0;
+    isRollCooldown.value = false;
+    rollCooldownRemaining.value = 0;
+    isStopped.value = false;
+    gameStarted.value = false; // 👈 YE LINE ADD KARO
+
     localStorage.setItem("bestScores", JSON.stringify(bestScores.value));
+
+    setTimeout(() => {
+        if (message.value === 'Game reset successfully!') {
+            message.value = '';
+        }
+    }, 2000);
 }
 
 function stop() {
@@ -231,10 +302,17 @@ function stop() {
         clearInterval(penaltyInterval);
         penaltyInterval = null;
     }
+    if (rollCooldownInterval) {
+        clearInterval(rollCooldownInterval);
+        rollCooldownInterval = null;
+    }
     isPenaltyActive.value = false;
     penaltyTimeRemaining.value = 0;
+    isRollCooldown.value = false;
+    rollCooldownRemaining.value = 0;
     startTime.value = null;
-    message.value = 'Game stopped. You can reset to start a new game.';
+    isStopped.value = true; // Mark as stopped
+    message.value = 'Game stopped. Click "Roll Dice" to resume or "Reset" to start over.';
 }
 </script>
 
@@ -279,20 +357,31 @@ function stop() {
                             class="flex-1 bg-green-500 hover:bg-green-600 text-white font-medium py-2 rounded-md shadow">
                             ✅ Submit
                         </button>
-                        <button @click="rollDice" :disabled="isPenaltyActive" :class="[
+
+                        <button @click="rollDice" :disabled="isPenaltyActive || isRollCooldown" :class="[
                             'flex-1 font-medium py-2 rounded-md shadow transition-all',
-                            isPenaltyActive 
-                                ? 'bg-gray-400 cursor-not-allowed opacity-60' 
+                            (isPenaltyActive || isRollCooldown)
+                                ? 'bg-gray-400 cursor-not-allowed opacity-60'
                                 : 'bg-purple-600 hover:bg-purple-700 text-white'
                         ]">
                             🎲 Roll Dice
                         </button>
-                        <button @click="resetGame"
-                            class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 rounded-md shadow">
+
+                        <button @click="resetGame" :disabled="!isStopped && gameStarted" :class="[
+                            'flex-1 font-medium py-2 rounded-md shadow transition-all',
+                            (!isStopped && gameStarted)
+                                ? 'bg-gray-400 cursor-not-allowed opacity-60'
+                                : 'bg-red-500 hover:bg-red-600 text-white'
+                        ]">
                             🔄 Reset
                         </button>
-                        <button @click="stop"
-                            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 rounded-md shadow">
+
+                        <button @click="stop" :disabled="!gameStarted || isStopped" :class="[
+                            'flex-1 font-medium py-2 rounded-md shadow transition-all',
+                            (!gameStarted || isStopped)
+                                ? 'bg-gray-400 cursor-not-allowed opacity-60'
+                                : 'bg-gray-500 hover:bg-gray-600 text-white'
+                        ]">
                             ⏹ Stop
                         </button>
                     </div>
@@ -301,7 +390,8 @@ function stop() {
                     <p class="text-sm text-gray-600 italic mb-2 min-h-[20px]">{{ message }}</p>
 
                     <!-- Penalty Countdown Display -->
-                    <div v-if="isPenaltyActive" class="mb-3 p-3 bg-red-50 border-2 border-red-300 rounded-lg w-full text-center animate-pulse">
+                    <div v-if="isPenaltyActive"
+                        class="mb-3 p-3 bg-red-50 border-2 border-red-300 rounded-lg w-full text-center animate-pulse">
                         <p class="text-red-700 font-bold text-lg">
                             ⏳ Penalty Active: {{ penaltyTimeRemaining }}s remaining
                         </p>
@@ -316,9 +406,9 @@ function stop() {
                             {{ String(Math.floor((elapsedTime % 3600) / 60)).padStart(2, '0') }}:
                             {{ String(elapsedTime % 60).padStart(2, '0') }}
                         </p>
-                        <p v-if="penaltyTime > 0" class="text-red-600 font-bold">
+                        <!-- <p v-if="penaltyTime > 0" class="text-red-600 font-bold">
                             ⏰ Total Penalty: +{{ Math.floor(penaltyTime / 60) }}:{{ String(penaltyTime % 60).padStart(2, '0') }}
-                        </p>
+                        </p> -->
                         <p>✅ Cleared: {{ usedTargets }} / 10</p>
                     </div>
                 </div>
@@ -353,38 +443,47 @@ function stop() {
         <ol class="list-decimal list-inside space-y-3 text-gray-800 text-base leading-relaxed pl-2">
             <li>
                 <span class="font-semibold text-purple-700">Roll Dice: </span>
-                <span>Click <span class="inline-block bg-purple-200 text-purple-800 px-2 py-0.5 rounded font-mono text-sm">🎲 Roll Dice</span> to roll four dice. Use these numbers to form expressions.</span>
+                <span>Click <span class="inline-block bg-purple-200 text-purple-800 px-2 py-0.5 rounded font-mono text-sm">
+                    🎲 Roll Dice</span> to roll four dice. Use these numbers to form expressions.</span>
             </li>
             <li>
                 <span class="font-semibold text-purple-700">Form Expressions: </span>
                 <span>Combine the dice numbers with <span class="font-mono bg-gray-100 px-1 rounded">+</span>
-                <span class="font-mono bg-gray-100 px-1 rounded">-</span> 
-                <span class="font-mono bg-gray-100 px-1 rounded">*</span> 
-                <span class="font-mono bg-gray-100 px-1 rounded">/</span> 
-                <span class="font-mono bg-gray-100 px-1 rounded">()</span> and parentheses to match a 
-                <span class="font-bold text-indigo-700">target number (1-10)</span>.</span>
+                    <span class="font-mono bg-gray-100 px-1 rounded">-</span>
+                    <span class="font-mono bg-gray-100 px-1 rounded">*</span>
+                    <span class="font-mono bg-gray-100 px-1 rounded">/</span>
+                    <span class="font-mono bg-gray-100 px-1 rounded">()</span> and parentheses to match a
+                    <span class="font-bold text-indigo-700">target number (1-10)</span>.</span>
             </li>
             <li>
                 <span class="font-semibold text-purple-700">Submit: </span>
-                <span>Enter your expression and click 
-                    <span class="inline-block bg-green-200 text-green-800 px-2 py-0.5 rounded font-mono text-sm">✅ Submit</span> or press <span class="font-mono bg-gray-100 px-1 rounded">Enter</span>.</span>
+                <span>Enter your expression and click
+                    <span class="inline-block bg-green-200 text-green-800 px-2 py-0.5 rounded font-mono text-sm">✅
+                        Submit</span> or press <span class="font-mono bg-gray-100 px-1 rounded">Enter</span>.</span>
             </li>
             <li>
                 <span class="font-semibold text-purple-700">Clear Targets: </span>
-                <span>If correct, the matching target number is cleared. Each die number can be used only once per expression.</span>
+                <span>If correct, the matching target number is cleared. Each die number can be used only once per
+                    expression.</span>
             </li>
             <li>
                 <span class="font-semibold text-purple-700">Penalties: </span>
-                <span>Rolling dice again or resetting mid-game adds a <span class="text-red-600 font-bold">+1 min penalty</span> and you must <span class="text-red-600 font-bold">wait 60 seconds</span> before you can roll dice again.</span>
+                <span>Rolling dice again or resetting mid-game adds a <span class="text-red-600 font-bold">+1 min
+                        penalty</span> and you must <span class="text-red-600 font-bold">wait 60 seconds</span> before
+                    you can roll dice again.</span>
             </li>
             <li>
                 <span class="font-semibold text-purple-700">Finish: </span>
-                <span>Clear all numbers 1-10 to finish. Your best times appear on the <span class="font-bold text-indigo-700">leaderboard</span>!</span>
+                <span>Clear all numbers 1-10 to finish. Your best times appear on the <span
+                        class="font-bold text-indigo-700">leaderboard</span>!</span>
             </li>
             <li>
                 <span class="font-semibold text-purple-700">Controls: </span>
-                <span>Use the <span class="inline-block bg-red-200 text-red-800 px-2 py-0.5 rounded font-mono text-sm">🔄 Reset</span> button to restart anytime. The 
-                <span class="inline-block bg-gray-200 text-gray-800 px-2 py-0.5 rounded font-mono text-sm">⏹ Stop</span> button pauses the game.</span>
+                <span>Use the <span
+                        class="inline-block bg-red-200 text-red-800 px-2 py-0.5 rounded font-mono text-sm">🔄
+                        Reset</span> button to restart anytime. The
+                    <span class="inline-block bg-gray-200 text-gray-800 px-2 py-0.5 rounded font-mono text-sm">⏹
+                        Stop</span> button pauses the game.</span>
             </li>
         </ol>
         <div class="mt-6 flex items-center gap-2 text-indigo-700 font-semibold text-lg">
