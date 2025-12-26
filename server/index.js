@@ -12,6 +12,7 @@ const cron = require('node-cron'); // not required but useful for scheduling
 const googleAPI = require('./utils/googleAPI');
 const { encryptToken, decryptToken } = require('./utils/Encryption');
 const { uploadData, downloadData } = require('./utils/uploadingData');
+const { data } = require('autoprefixer');
 require('dotenv').config();
 
 const app = express();
@@ -267,6 +268,19 @@ app.get('/api/daily-tasks/scoreboard', async (req, res) => {
     }
 });
 
+app.get('/api/profile/:user', async (req, res) => {
+    try {
+        const username = req.params.user;
+        const userProfileData = await client.db("E-Learning").collection("users").findOne({ name: username }, { projection: { _id: 0, password: 0 } });
+        if (!userProfileData) {
+            return res.status(404).json({ message: 'User not found', ok: false });
+        }
+        res.status(200).json({ data: userProfileData, ok: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error', ok: false });
+    }
+});
+
 app.get('/api/user-score/:user', async (req, res) => {
     try {
         const username = req.params.user;
@@ -281,6 +295,7 @@ app.get('/api/user-score/:user', async (req, res) => {
                 return;
             }
         }
+        res.status(200).json({ message: 'No score data for today', ok: false, data: {email: userScoreData[0].userEmail} });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error', ok: false });
     }
