@@ -358,9 +358,9 @@ function stop() {
                             ✅ Submit
                         </button>
 
-                        <button @click="rollDice" :disabled="isPenaltyActive || isRollCooldown" :class="[
+                        <button @click="rollDice" :disabled="isPenaltyActive || isRollCooldown || isStopped" :class="[
                             'flex-1 font-medium py-2 rounded-md shadow transition-all',
-                            (isPenaltyActive || isRollCooldown)
+                            (isPenaltyActive || isRollCooldown || isStopped)
                                 ? 'bg-gray-400 cursor-not-allowed opacity-60'
                                 : 'bg-purple-600 hover:bg-purple-700 text-white'
                         ]">
@@ -443,8 +443,9 @@ function stop() {
         <ol class="list-decimal list-inside space-y-3 text-gray-800 text-base leading-relaxed pl-2">
             <li>
                 <span class="font-semibold text-purple-700">Roll Dice: </span>
-                <span>Click <span class="inline-block bg-purple-200 text-purple-800 px-2 py-0.5 rounded font-mono text-sm">
-                    🎲 Roll Dice</span> to roll four dice. Use these numbers to form expressions.</span>
+                <span>Click <span
+                        class="inline-block bg-purple-200 text-purple-800 px-2 py-0.5 rounded font-mono text-sm">
+                        🎲 Roll Dice</span> to roll four dice. Use these numbers to form expressions.</span>
             </li>
             <li>
                 <span class="font-semibold text-purple-700">Form Expressions: </span>

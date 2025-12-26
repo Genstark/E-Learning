@@ -44,6 +44,7 @@ function logout() {
 </script>
 
 <template>
+    <div class="pt-16"></div>
     <header class="fixed top-0 left-0 w-full bg-white shadow z-50" :class="{ 'large-text': largeText }">
         <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-3 sm:py-4">
