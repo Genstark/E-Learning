@@ -25,7 +25,6 @@ async function loadProfile() {
             credentials: 'include',
         });
         const json = await res.json();
-        console.log(json);
         if (res.ok && json.data) {
             profile.value = json.data;
         }

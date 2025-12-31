@@ -63,7 +63,7 @@ function rollDice() {
         return;
     }
 
-    // 👇 YE LINE ADD KARO - Mark game as started
+    // 👇 Mark game as started
     gameStarted.value = true;
 
     // Start timer if first roll OR resume after stop
@@ -88,11 +88,12 @@ function rollDice() {
             }, 2000);
         }
     } else if (usedTargets.value > 0 && usedTargets.value < 10) {
-        // 🚨 Apply penalty countdown for rolling dice again during game
+        // 🚨 Apply 2-minute penalty for rolling dice again during game
+        // BUT STILL ROLL THE DICE!
         isPenaltyActive.value = true;
-        penaltyTimeRemaining.value = 60;
-        penaltyTime.value += 60;
-        message.value = '⚠️ 1-minute penalty! Wait before rolling again.';
+        penaltyTimeRemaining.value = 120; // 👈 Changed from 60 to 120 (2 minutes)
+        penaltyTime.value += 120; // 👈 Changed from 60 to 120
+        message.value = '⚠️ 2-minute penalty applied! Dice rolled.'; // 👈 Updated message
 
         penaltyInterval = setInterval(() => {
             penaltyTimeRemaining.value--;
@@ -108,7 +109,9 @@ function rollDice() {
                 }, 2000);
             }
         }, 1000);
-        return; // ⛔ Don't roll dice until penalty ends
+        
+        // ✅ DON'T RETURN - Let dice roll happen below
+        // return; // ❌ REMOVE THIS LINE
     }
 
     // Roll 4 dice
@@ -469,8 +472,8 @@ function stop() {
             </li>
             <li>
                 <span class="font-semibold text-purple-700">Penalties: </span>
-                <span>Rolling dice again or resetting mid-game adds a <span class="text-red-600 font-bold">+1 min
-                        penalty</span> and you must <span class="text-red-600 font-bold">wait 60 seconds</span> before
+                <span>Rolling dice again or resetting mid-game adds a <span class="text-red-600 font-bold">+2 min
+                        penalty</span> and you must <span class="text-red-600 font-bold">wait 120 seconds</span> before
                     you can roll dice again.</span>
             </li>
             <li>
