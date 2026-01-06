@@ -12,7 +12,6 @@ const cron = require('node-cron'); // not required but useful for scheduling
 const googleAPI = require('./utils/googleAPI');
 const { encryptToken, decryptToken } = require('./utils/Encryption');
 const { uploadData, downloadData } = require('./utils/uploadingData');
-const { data } = require('autoprefixer');
 require('dotenv').config();
 
 const app = express();
@@ -229,6 +228,7 @@ app.get('/api/roll-dice', async (req, res) => {
         } else {
             // No entry for today → clear all previous data and generate fresh data for today
             await client.db("E-Learning").collection("daily-task-data").deleteMany({});
+            await client.db("E-Learning").collection("daily-tasks").deleteMany({});
 
             // Generate new data for today and store it
             rolldicenumber = await rollDice();
@@ -278,6 +278,15 @@ app.get('/api/profile/:user', async (req, res) => {
         res.status(200).json({ data: userProfileData, ok: true });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error', ok: false });
+    }
+});
+
+app.get('/api/user-privious-score/:user', async(req, res) => {
+    try{
+        const username = req.params.user;
+    }
+    catch(error){
+        console.error(error);
     }
 });
 
@@ -373,7 +382,6 @@ let job = cron.schedule("* * * * * *", async () => {
         SECRET_KEY = await generateSecretKey();
         console.log("Generated new SECRET_KEY");
     }
-
     job.stop();
     job = cron.schedule("0 0 * * *", async () => {
         SECRET_KEY = await generateSecretKey();

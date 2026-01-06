@@ -18,7 +18,7 @@ async function loadProfile() {
     loading.value = true;
     error.value = '';
     try {
-        console.log('wait...')
+        console.log('wait...');
         const res = await fetch(`${process.env.VUE_APP_URL}/user-score/${username}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
