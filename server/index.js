@@ -228,6 +228,7 @@ app.get('/api/roll-dice', async (req, res) => {
         } else {
             // No entry for today → clear all previous data and generate fresh data for today
             await client.db("E-Learning").collection("daily-task-data").deleteMany({});
+            await client.db("E-Learning").collection("daily-tasks").deleteMany({});
 
             // Generate new data for today and store it
             rolldicenumber = await rollDice();
@@ -267,12 +268,38 @@ app.get('/api/daily-tasks/scoreboard', async (req, res) => {
     }
 });
 
+app.get('/api/profile/:user', async (req, res) => {
+    try {
+        const username = req.params.user;
+        const userProfileData = await client.db("E-Learning").collection("users").findOne({ name: username }, { projection: { _id: 0, password: 0 } });
+        if (!userProfileData) {
+            return res.status(404).json({ message: 'User not found', ok: false });
+        }
+        res.status(200).json({ data: userProfileData, ok: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error', ok: false });
+    }
+});
+
+app.get('/api/user-privious-score/:user', async(req, res) => {
+    try{
+        const username = req.params.user;
+    }
+    catch(error){
+        console.error(error);
+    }
+});
+
 app.get('/api/user-score/:user', async (req, res) => {
     try {
         const username = req.params.user;
         const userScoreData = await client.db("E-Learning").collection("daily-tasks").find({ userName: username }).toArray();
-        if (!userScoreData) {
-            return res.status(404).json({ message: 'No score data found for user', ok: false });
+        if (userScoreData === null || userScoreData.length === 0) {
+            const userEmail = await client.db("E-Learning").collection("users").findOne({ name: username }, { projection: { _id: 0, email: 1 } });
+            if (!userEmail) {
+                return res.status(404).json({ message: 'User not found', ok: false });
+            }
+            return res.status(200).json({ message: 'No score data found for user', ok: false, email: userEmail.email });
         }
         const todayDate = new Date().toISOString().slice(0, 10);
         for (let i = 0; i < userScoreData.length; i++) {
@@ -281,6 +308,7 @@ app.get('/api/user-score/:user', async (req, res) => {
                 return;
             }
         }
+        res.status(200).json({ message: 'No score data for today', ok: false, data: { email: userScoreData[0].userEmail } });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error', ok: false });
     }
@@ -354,7 +382,6 @@ let job = cron.schedule("* * * * * *", async () => {
         SECRET_KEY = await generateSecretKey();
         console.log("Generated new SECRET_KEY");
     }
-
     job.stop();
     job = cron.schedule("0 0 * * *", async () => {
         SECRET_KEY = await generateSecretKey();
@@ -369,7 +396,7 @@ app.listen(PORT, () => {
     console.log(`Server is running on port http://localhost:${PORT}`);
 });
 
-const canRunNgrok = false; // Set to true if you want to run ngrok
+const canRunNgrok = true; // Set to true if you want to run ngrok
 if (canRunNgrok) {
     ngrok.connect({ addr: PORT, authtoken: process.env.NGROK })
         .then(listener => console.log(`Ingress established at: ${listener.url()}`));

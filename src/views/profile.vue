@@ -18,15 +18,20 @@ async function loadProfile() {
     loading.value = true;
     error.value = '';
     try {
+        console.log('wait...');
         const res = await fetch(`${process.env.VUE_APP_URL}/user-score/${username}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
-            credentials: 'include'
+            credentials: 'include',
         });
         const json = await res.json();
         if (res.ok && json.data) {
             profile.value = json.data;
-        } else {
+        }
+        else if (json.data) {
+            profile.value = json.data;
+        }
+        else {
             // if the API returns not found, fallback to minimal info from localStorage (if any)
             error.value = json.message || 'Profile not found';
         }
@@ -77,7 +82,7 @@ const totalScore = computed(() => {
                         </div>
                         <div>
                             <h2 class="text-xl sm:text-2xl font-semibold">{{ displayName }}</h2>
-                            <p class="text-sm sm:text-base text-gray-600">{{ displayEmail }}</p>
+                            <p class="text-sm sm:text-base text-gray-600 font-semibold">{{ displayEmail }}</p>
                         </div>
                     </div>
 

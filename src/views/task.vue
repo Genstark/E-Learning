@@ -241,13 +241,13 @@ async function startGame() {
     message.value = 'Loading game data...';
 
     // Timer start
-    if (!startTime.value) {
-        startTime.value = Date.now() - (elapsedTime.value * 1000);
-        timerInterval = setInterval(() => {
-            elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
-        }, 1000);
-    }
-    gameStarted.value = true;
+    // if (!startTime.value) {
+    //     startTime.value = Date.now() - (elapsedTime.value * 1000);
+    //     timerInterval = setInterval(() => {
+    //         elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
+    //     }, 1000);
+    // }
+    // gameStarted.value = true;
 
     // API se data fetch (only if dice are not already loaded)
     if (dice.value.length === 0) {
@@ -297,6 +297,14 @@ async function startGame() {
                 } else {
                     message.value = 'Questions parsing failed - using defaults';
                 }
+                // Timer start
+                if (!startTime.value) {
+                    startTime.value = Date.now() - (elapsedTime.value * 1000);
+                    timerInterval = setInterval(() => {
+                        elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
+                    }, 1000);
+                }
+                gameStarted.value = true;
             } else {
                 message.value = 'No questions from API - using defaults';
             }
@@ -447,7 +455,7 @@ function endBowling() {
     }
 }
 
-function quitGame() {
+async function quitGame() {
     if (confirm('Are you sure you want to quit the entire game? All progress will be lost and you will be redirected to home.')) {
         // Timer stop karo
         if (timerInterval) {
@@ -455,9 +463,26 @@ function quitGame() {
             timerInterval = null;
         }
 
-        // Sab kuch clear kar do
-        localStorage.removeItem(GAME_STATE_KEY);
-        localStorage.removeItem(LAST_SUBMISSION_DATE_KEY);
+        const todayDate = new Date().toISOString().slice(0, 10);
+        const response = await fetch(`${process.env.VUE_APP_URL}/submit/daily-tasks`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                mcqScore: Number(score.value),
+                numberBowlingScore: Number(totalSolvedNumber.value),
+                totalScore: Number(score.value + totalSolvedNumber.value),
+                totalTime: formatTime(totalGameTime.value),
+                userName: localStorage.getItem('user'),
+                submissionDate: todayDate,
+            })
+        });
+
+        const data = await response.json();
+        if (data.ok) {
+            // Sab kuch clear kar do
+            localStorage.removeItem(GAME_STATE_KEY);
+            localStorage.removeItem(LAST_SUBMISSION_DATE_KEY);
+        }
 
         // Home page pe redirect kar do
         alert('Game quit. Redirecting to home page...');
@@ -664,11 +689,13 @@ function quitGame() {
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div class="bg-white rounded-lg p-4 shadow">
                         <p class="text-gray-600 text-sm mb-1">MCQ Score</p>
-                        <p class="text-2xl font-bold text-indigo-600">{{ completeGameScore.mcqScore }} / {{ questionsCount }}</p>
+                        <p class="text-2xl font-bold text-indigo-600">{{ completeGameScore.mcqScore }} / {{
+                            questionsCount }}</p>
                     </div>
                     <div class="bg-white rounded-lg p-4 shadow">
                         <p class="text-gray-600 text-sm mb-1">Numbers Cleared</p>
-                        <p class="text-2xl font-bold text-purple-600">{{ completeGameScore.numberBowlingScore }} / 10</p>
+                        <p class="text-2xl font-bold text-purple-600">{{ completeGameScore.numberBowlingScore }} / 10
+                        </p>
                     </div>
                     <div class="bg-white rounded-lg p-4 shadow">
                         <p class="text-gray-600 text-sm mb-1">Total Time</p>

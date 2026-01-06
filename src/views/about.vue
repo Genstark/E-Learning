@@ -5,7 +5,7 @@ import Header from '@/components/Header.vue';
 </script>
 <template>
 	<Header />
-	<div class="about w-full max-w-4xl mx-auto mt-12 p-8 bg-white rounded-2xl shadow-lg">
+	<div class="about w-full max-w-4xl mx-auto mt-0 md:mt-12 p-8 bg-white rounded-2xl shadow-lg">
 		<h2 class="text-3xl font-extrabold mb-6 text-center text-indigo-700 tracking-wide">
 			About
 		</h2>
