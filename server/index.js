@@ -284,6 +284,9 @@ app.get('/api/profile/:user', async (req, res) => {
 app.get('/api/user-privious-score/:user', async(req, res) => {
     try{
         const username = req.params.user;
+        console.log(username);
+        const download = await downloadData('download');
+        res.status(200).json({message: 'got the username', ok: true, user: username, data: download});
     }
     catch(error){
         console.error(error);
