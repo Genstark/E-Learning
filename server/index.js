@@ -11,7 +11,7 @@ const ngrok = require('@ngrok/ngrok');
 const cron = require('node-cron'); // not required but useful for scheduling
 const googleAPI = require('./utils/googleAPI');
 const { encryptToken, decryptToken } = require('./utils/Encryption');
-const { uploadData, downloadData } = require('./utils/uploadingData');
+const { uploadData, downloadData, downloadDataByDate } = require('./utils/uploadingData');
 require('dotenv').config();
 
 const app = express();
@@ -281,11 +281,16 @@ app.get('/api/profile/:user', async (req, res) => {
     }
 });
 
-app.get('/api/user-privious-score/:user', async(req, res) => {
-    try{
+app.get('/api/user-privious-score/:user/:date', async (req, res) => {
+    try {
         const username = req.params.user;
+        const date = req.params.date;
+        const last_score = date;
+        const download = await downloadDataByDate('downLoadByDate', last_score);
+        console.log(download);
+        res.status(200).json({ message: 'got the username', ok: true, user: username, data: download });
     }
-    catch(error){
+    catch (error) {
         console.error(error);
     }
 });

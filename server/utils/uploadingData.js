@@ -23,4 +23,16 @@ async function downloadData(action) {
     return result;
 }
 
-module.exports = { uploadData, downloadData };
+async function downloadDataByDate(action, datestring) {
+    const response = await fetch(process.env.DOWNLOADING, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, datestring }),
+    });
+    const result = await response.json();
+    return result;
+}
+
+module.exports = { uploadData, downloadData, downloadDataByDate };
