@@ -61,7 +61,7 @@ const submissionDate = computed(() => {
 const mcqScore = computed(() => Number(profile.value?.mcqScore || 0));
 const numberBowlingScore = computed(() => Number(profile.value?.numberBowlingScore || 0));
 const totalScore = computed(() => {
-    if (profile.value && typeof profile.value.totalScore !== 'undefined'){
+    if (profile.value && typeof profile.value.totalScore !== 'undefined') {
         return Number(profile.value.totalScore);
     }
     return mcqScore.value + numberBowlingScore.value;
@@ -81,6 +81,7 @@ const minDate = computed(() => {
 });
 
 const selectedDate = ref('');
+const priviousScore = ref(null);
 async function printDate() {
     console.log('Selected date:', selectedDate.value);
     const apiUrl = `${process.env.VUE_APP_URL}/user-privious-score/${username}/${selectedDate.value}`;
@@ -91,6 +92,13 @@ async function printDate() {
     });
     const json = await fetchData.json();
     console.log(json);
+    if (json.data) {
+        priviousScore.value = json.data;
+        console.log('Previous Score Data:', priviousScore.value);
+    }
+    else {
+        console.log('No data found for the selected date.');
+    }
     // Here you can add logic to filter profile data based on the selected date
 }
 </script>
@@ -115,11 +123,13 @@ async function printDate() {
                     </div>
 
                     <div class="flex items-center gap-3">
-                        <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded w-full sm:w-auto text-sm transition-colors"
+                        <button
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded w-full sm:w-auto text-sm transition-colors"
                             @click="loadProfile">
                             Refresh
                         </button>
-                        <button class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded w-full sm:w-auto text-sm transition-colors"
+                        <button
+                            class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded w-full sm:w-auto text-sm transition-colors"
                             @click="goToResetEmail">
                             Reset Email
                         </button>
@@ -129,7 +139,7 @@ async function printDate() {
                 <!-- Profile Stats -->
                 <div class="mt-6">
                     <div v-if="loading" class="text-sm text-gray-600">Loading profile…</div>
-                    
+
                     <div v-else>
                         <div v-if="error" class="mb-4 text-sm text-red-600">{{ error }}</div>
 
@@ -158,19 +168,51 @@ async function printDate() {
                     <!-- date input with last 7 days restriction -->
                     <div class="mt-4">
                         <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Select Date:</label>
-                        <input 
-                            type="date" 
-                            id="date" 
-                            name="date"
-                            :min="minDate"
-                            :max="maxDate"
-                            v-model="selectedDate"
+                        <input type="date" id="date" name="date" :min="minDate" :max="maxDate" v-model="selectedDate"
                             class="mt-1 block w-full sm:w-1/2 border border-gray-300 rounded-md shadow-sm 
-                            py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
-                        />
-                        <button @click="printDate" class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded w-full sm:w-auto text-sm transition-colors">
+                            py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                        <button @click="printDate"
+                            class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded w-full sm:w-auto text-sm transition-colors">
                             Filter
                         </button>
+
+                        <div v-if="priviousScore" class="mt-4">
+                            <h3 class="text-lg font-semibold mb-2">
+                                Previous Score on {{ selectedDate }}
+                            </h3>
+
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full border border-gray-300 bg-white rounded">
+                                    <thead class="bg-gray-100">
+                                        <tr>
+                                            <th class="px-4 py-2 text-left border-b">Score Type</th>
+                                            <th class="px-4 py-2 text-left border-b">Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="px-4 py-2 border-b">MCQ Score</td>
+                                            <td class="px-4 py-2 border-b">
+                                                {{ priviousScore.mcqScore || 0 }}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-2 border-b">Number Bowling Score</td>
+                                            <td class="px-4 py-2 border-b">
+                                                {{ priviousScore.numberBowlingScore || 0 }}
+                                            </td>
+                                        </tr>
+                                        <tr class="font-bold bg-gray-50">
+                                            <td class="px-4 py-2">Total Score</td>
+                                            <td class="px-4 py-2">
+                                                {{ (priviousScore.mcqScore || 0) + (priviousScore.numberBowlingScore || 0) }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
                     </div>
                 </div>
             </section>

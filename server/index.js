@@ -287,11 +287,16 @@ app.get('/api/user-privious-score/:user/:date', async (req, res) => {
         const date = req.params.date;
         const last_score = date;
         const download = await downloadDataByDate('downLoadByDate', last_score);
-        console.log(download);
-        res.status(200).json({ message: 'got the username', ok: true, user: username, data: download });
+        for (let i=0; i < download.data.length; i++) {
+            if (download.data[i].userName === username) {
+                return res.status(200).json({ message: 'got the username', ok: true, user: username, data: download.data[i] });
+            }
+        }
+        res.status(404).json({ message: 'Data not found', ok: false, user: username, data: false });
     }
     catch (error) {
         console.error(error);
+        res.status(500).json({ error: 'Internal server error', ok: false });
     }
 });
 
@@ -304,7 +309,7 @@ app.get('/api/user-score/:user', async (req, res) => {
             if (!userEmail) {
                 return res.status(404).json({ message: 'User not found', ok: false });
             }
-            return res.status(200).json({ message: 'No score data found for user', ok: false, email: userEmail.email });
+            return res.status(200).json({ message: 'No today score found', ok: false, email: userEmail.email });
         }
         const todayDate = new Date().toISOString().slice(0, 10);
         for (let i = 0; i < userScoreData.length; i++) {
