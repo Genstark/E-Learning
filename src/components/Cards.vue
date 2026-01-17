@@ -26,7 +26,7 @@ const openBlank = (url) => {
             <div v-for="(card, index) in props.cards" :key="index"
                 class="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
                 <!-- Card Image -->
-                <img :src="card.image" :alt="card.title" class="w-full h-52 object-cover" />
+                <img :src="card.image" :alt="card.title" class="w-full aspect-[4/3] object-contain bg-black/5" />
                 <!-- Card Content -->
                 <div class="p-6">
                     <h5 class="text-lg font-semibold text-gray-800 mb-2">{{ card.title }}</h5>
