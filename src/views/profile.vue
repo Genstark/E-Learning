@@ -91,7 +91,6 @@ async function printDate() {
         credentials: 'include',
     });
     const json = await fetchData.json();
-    console.log(json);
     if (json.data) {
         priviousScore.value = json.data;
         console.log('Previous Score Data:', priviousScore.value);
@@ -143,7 +142,7 @@ async function printDate() {
                     <div v-else>
                         <div v-if="error" class="mb-4 text-sm text-red-600">{{ error }}</div>
 
-                        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+                        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">       
                             <div class="p-4 bg-gray-50 rounded">
                                 <dt class="text-xs text-gray-500">MCQ Score</dt>
                                 <dd class="text-2xl font-bold mt-1">{{ mcqScore }}</dd>
@@ -191,6 +190,12 @@ async function printDate() {
                                     </thead>
                                     <tbody>
                                         <tr>
+                                            <td class="px-4 py-2 border-b">Rank</td>
+                                            <td class="px-4 py-2 border-b">
+                                                {{ priviousScore.rank || '—' }}
+                                            </td>
+                                        </tr>
+                                        <tr>
                                             <td class="px-4 py-2 border-b">MCQ Score</td>
                                             <td class="px-4 py-2 border-b">
                                                 {{ priviousScore.mcqScore || 0 }}
@@ -205,7 +210,8 @@ async function printDate() {
                                         <tr class="font-bold bg-gray-50">
                                             <td class="px-4 py-2">Total Score</td>
                                             <td class="px-4 py-2">
-                                                {{ (priviousScore.mcqScore || 0) + (priviousScore.numberBowlingScore || 0) }}
+                                                {{ (priviousScore.mcqScore || 0) + (priviousScore.numberBowlingScore ||
+                                                0) }}
                                             </td>
                                         </tr>
                                     </tbody>
