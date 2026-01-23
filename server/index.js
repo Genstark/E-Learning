@@ -284,9 +284,8 @@ app.get('/api/profile/:user', async (req, res) => {
 app.get('/api/user-privious-score/:user/:date', async (req, res) => {
     try {
         const username = req.params.user;
-        const date = req.params.date;
-        const last_score = date;
-        const download = await downloadDataByDate('downLoadByDate', last_score);
+        const last_score_date = req.params.date;
+        const download = await downloadDataByDate('downLoadByDate', last_score_date);
         for (let i=0; i < download.data.length; i++) {
             if (download.data[i].userName === username) {
                 return res.status(200).json({ message: 'got the username', ok: true, user: username, data: download.data[i] });
@@ -328,6 +327,9 @@ app.get('/api/download-score', async (req, res) => {
     // const getsocreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
     console.log('get all scoreboard data');
     const upload = await downloadData('download');
+    if(!upload || !upload.data) {
+        return res.status(404).json({ message: 'No scoreboard data found', ok: false });
+    }
     res.status(200).json({ message: 'Uploaded to S3', ok: true, upload });
 });
 
