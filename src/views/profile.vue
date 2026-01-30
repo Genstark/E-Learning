@@ -142,7 +142,7 @@ async function printDate() {
                     <div v-else>
                         <div v-if="error" class="mb-4 text-sm text-red-600">{{ error }}</div>
 
-                        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">       
+                        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
                             <div class="p-4 bg-gray-50 rounded">
                                 <dt class="text-xs text-gray-500">MCQ Score</dt>
                                 <dd class="text-2xl font-bold mt-1">{{ mcqScore }}</dd>
@@ -175,49 +175,52 @@ async function printDate() {
                             Filter
                         </button>
 
-                        <div v-if="priviousScore" class="mt-4">
-                            <h3 class="text-lg font-semibold mb-2">
-                                Previous Score on {{ selectedDate }}
-                            </h3>
+                        <div v-if="priviousScore" class="mt-6">
+                            <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-800">
+                                        Previous Performance
+                                    </h3>
+                                    <span class="text-sm text-gray-500">
+                                        {{ selectedDate }}
+                                    </span>
+                                </div>
 
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full border border-gray-300 bg-white rounded">
-                                    <thead class="bg-gray-100">
-                                        <tr>
-                                            <th class="px-4 py-2 text-left border-b">Score Type</th>
-                                            <th class="px-4 py-2 text-left border-b">Score</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td class="px-4 py-2 border-b">Rank</td>
-                                            <td class="px-4 py-2 border-b">
-                                                {{ priviousScore.rank || '—' }}
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="px-4 py-2 border-b">MCQ Score</td>
-                                            <td class="px-4 py-2 border-b">
-                                                {{ priviousScore.mcqScore || 0 }}
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="px-4 py-2 border-b">Number Bowling Score</td>
-                                            <td class="px-4 py-2 border-b">
-                                                {{ priviousScore.numberBowlingScore || 0 }}
-                                            </td>
-                                        </tr>
-                                        <tr class="font-bold bg-gray-50">
-                                            <td class="px-4 py-2">Total Score</td>
-                                            <td class="px-4 py-2">
-                                                {{ (priviousScore.mcqScore || 0) + (priviousScore.numberBowlingScore ||
-                                                0) }}
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                <!-- Score Cards -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                    <!-- Rank -->
+                                    <div class="p-4 bg-gray-50 rounded-lg text-center">
+                                        <p class="text-xs text-gray-500 mb-1">Rank</p>
+                                        <p class="text-2xl font-bold text-gray-800">
+                                            {{ priviousScore.rank ?? '—' }}
+                                        </p>
+                                    </div>
+
+                                    <!-- MCQ -->
+                                    <div class="p-4 bg-blue-50 rounded-lg text-center">
+                                        <p class="text-xs text-blue-600 mb-1">MCQ Score</p>
+                                        <p class="text-2xl font-bold text-blue-800">
+                                            {{ priviousScore.mcqScore || 0 }}
+                                        </p>
+                                    </div>
+
+                                    <!-- Number Bowling -->
+                                    <div class="p-4 bg-purple-50 rounded-lg text-center">
+                                        <p class="text-xs text-purple-600 mb-1">Number Bowling</p>
+                                        <p class="text-2xl font-bold text-purple-800">
+                                            {{ priviousScore.numberBowlingScore || 0 }}
+                                        </p>
+                                    </div>
+
+                                    <!-- Total -->
+                                    <div class="p-4 bg-green-100 rounded-lg text-center border border-green-300">
+                                        <p class="text-xs text-green-700 mb-1">Total Score</p>
+                                        <p class="text-3xl font-extrabold text-green-800">
+                                            {{ (priviousScore.mcqScore || 0) + (priviousScore.numberBowlingScore || 0) }}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
-
                         </div>
                     </div>
                 </div>
