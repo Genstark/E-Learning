@@ -51,7 +51,7 @@ onMounted(() => {
 });
 
 const displayName = computed(() => profile.value?.userName || profile.value?.name || username || '—');
-const displayEmail = computed(() => profile.value?.userEmail || profile.value?.email || '—');
+const displayEmail = computed(() => profile.value?.email || '—');
 const submissionDate = computed(() => {
     if (profile.value && profile.value.submissionDate) {
         return new Date(profile.value.submissionDate).toLocaleDateString();
@@ -216,7 +216,8 @@ async function printDate() {
                                     <div class="p-4 bg-green-100 rounded-lg text-center border border-green-300">
                                         <p class="text-xs text-green-700 mb-1">Total Score</p>
                                         <p class="text-3xl font-extrabold text-green-800">
-                                            {{ (priviousScore.mcqScore || 0) + (priviousScore.numberBowlingScore || 0) }}
+                                            {{ (priviousScore.mcqScore || 0) + (priviousScore.numberBowlingScore || 0)
+                                            }}
                                         </p>
                                     </div>
                                 </div>
