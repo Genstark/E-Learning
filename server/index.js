@@ -376,7 +376,8 @@ app.post('/api/submit/daily-tasks', async (req, res) => {
     try {
         await client.db("E-Learning").collection("daily-tasks").insertOne(response);
         const getScoreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
-        await uploadData(getScoreboardData, 'upload');
+        const shortscoreData = await rankPlayers(getScoreboardData);
+        await uploadData(shortscoreData, 'upload');
         console.log("Daily tasks submitted successfully");
     } catch (error) {
         console.error("Error submitting daily tasks:", error);
@@ -408,7 +409,10 @@ app.listen(PORT, () => {
     console.log(`Server is running on port http://localhost:${PORT}`);
 });
 
-const canRunNgrok = true; // Set to true if you want to run ngrok
+// Enable ngrok when run via `npm start`, disable for `npm run dev`.
+// `process.env.npm_lifecycle_event` holds the script name (e.g., 'start' or 'dev').
+// Allows explicit override with `RUN_NGROK=true` if needed.
+const canRunNgrok = (process.env.npm_lifecycle_event === 'start') || process.env.RUN_NGROK === 'true';
 if (canRunNgrok) {
     ngrok.connect({ addr: PORT, authtoken: process.env.NGROK })
         .then(listener => console.log(`Ingress established at: ${listener.url()}`));
