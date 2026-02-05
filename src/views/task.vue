@@ -504,11 +504,13 @@ async function quitGame() {
                         🎲 Number Bowling
                     </h2>
 
-                    <!-- Dice -->
-                    <div v-memo="[dice]" class="flex justify-center space-x-4 mb-6">
-                        <div v-for="(d, i) in dice" :key="i" :class="{ 'animate-dice-roll': animatingDice }"
-                            class="w-16 h-16 rounded-xl bg-purple-100 text-purple-800 border-2 border-purple-500 text-3xl font-bold flex items-center justify-center shadow-xl hover:scale-105 transition-transform">
-                            {{ d }}
+                    <!-- Dice: fixed-width container -->
+                    <div v-memo="[dice]" class="w-full flex justify-center items-center mb-6 px-2">
+                        <div class="flex gap-2 sm:gap-4">
+                            <div v-for="(d, i) in dice" :key="i" :class="{ 'animate-dice-roll': animatingDice }"
+                                class="w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 rounded-xl bg-purple-100 text-purple-800 border-2 border-purple-500 text-2xl sm:text-3xl font-bold flex items-center justify-center shadow-xl hover:scale-105 transition-transform">
+                                {{ d }}
+                            </div>
                         </div>
                     </div>
 
