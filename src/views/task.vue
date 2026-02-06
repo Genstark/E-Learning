@@ -635,7 +635,7 @@ async function quitGame() {
                     <!-- Timer and Bowling Progress -->
                     <div class="w-full flex justify-between text-sm text-gray-700 mt-4">
                         <p>🕒 Time: {{ formatTime(elapsedTime) }}</p>
-                        <p>✅ Cleared: {{ totalSolvedNumber }} / 10</p>
+                        <p>✅ Number Cleared: {{ totalSolvedNumber }} / 10</p>
                     </div>
 
                     <!-- Navigation to E-Library -->
