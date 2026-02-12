@@ -313,8 +313,7 @@ app.get('/api/user-score/:user', async (req, res) => {
         const todayDate = new Date().toISOString().slice(0, 10);
         for (let i = 0; i < userScoreData.length; i++) {
             if (userScoreData[i].submissionDate === todayDate) {
-                res.status(200).json({ data: userScoreData[i], ok: true });
-                return;
+                return res.status(200).json({ data: userScoreData[i], ok: true });
             }
         }
         res.status(200).json({ message: 'No score data for today', ok: false, data: { email: userScoreData[0].userEmail } });
@@ -386,7 +385,9 @@ app.post('/api/submit/daily-tasks', async (req, res) => {
 });
 
 // home page route
-app.get(/.*/, (req, res) => {
+app.get(/.*/, async (req, res) => {
+    // const indexpath = await fetch(process.env.DEPLOY_PAGE_URL, { method: 'GET' });
+    // res.send(await indexpath.text());
     res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });
 
@@ -409,10 +410,8 @@ app.listen(PORT, () => {
     console.log(`Server is running on port http://localhost:${PORT}`);
 });
 
-// Enable ngrok when run via `npm start`, disable for `npm run dev`.
-// `process.env.npm_lifecycle_event` holds the script name (e.g., 'start' or 'dev').
-// Allows explicit override with `RUN_NGROK=true` if needed.
-const canRunNgrok = (process.env.npm_lifecycle_event === 'start') || process.env.RUN_NGROK === 'true';
+
+const canRunNgrok = (process.env.npm_lifecycle_event === 'prod');
 if (canRunNgrok) {
     ngrok.connect({ addr: PORT, authtoken: process.env.NGROK })
         .then(listener => console.log(`Ingress established at: ${listener.url()}`));

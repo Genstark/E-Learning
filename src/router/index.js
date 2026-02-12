@@ -81,9 +81,9 @@ function getCookie(name) {
 router.beforeEach(async (to, from, next) => {
     // const token = getCookie('token') ? getCookie('token') : localStorage.getItem('token');
     const token = getCookie('token');
-    console.log('🔐 Router Guard - Navigating to:', to.path);
-    console.log('🍪 Token from cookies:', getCookie('token'));
-    console.log('🔑 Current token:', token);
+    // console.log('🔐 Router Guard - Navigating to:', to.path);
+    // console.log('🍪 Token from cookies:', getCookie('token'));
+    // console.log('🔑 Current token:', token);
 
     // Agar user login, signup, reset page par ja raha hai, guard skip karo
     if (to.path === '/login' || to.path === '/signup' || to.path === '/reset-password') {
@@ -95,7 +95,7 @@ router.beforeEach(async (to, from, next) => {
         console.log('✅ Skipping guard for home page');
         const useris = localStorage.getItem('user');
         if (useris) {
-            console.log('➡️ Redirecting to user home:', `/${useris}`);
+            // console.log('➡️ Redirecting to user home:', `/${useris}`);
             return next({path: `/${useris}`});
         }
         return next({path: '/login'});
@@ -121,7 +121,7 @@ router.beforeEach(async (to, from, next) => {
             credentials: 'include'
         });
 
-        console.log('📊 Token validation response status:', response.status);
+        // console.log('📊 Token validation response status:', response.status);
         if (response.ok) {
             // const data = await response.json();
             console.log('✅ Token is valid');

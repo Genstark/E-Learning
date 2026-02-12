@@ -51,7 +51,7 @@ onMounted(() => {
 });
 
 const displayName = computed(() => profile.value?.userName || profile.value?.name || username || '—');
-const displayEmail = computed(() => profile.value?.email || '—');
+const displayEmail = computed(() => profile.value?.email || profile.value?.userEmail || '—');
 const submissionDate = computed(() => {
     if (profile.value && profile.value.submissionDate) {
         return new Date(profile.value.submissionDate).toLocaleDateString();
@@ -83,7 +83,6 @@ const minDate = computed(() => {
 const selectedDate = ref('');
 const priviousScore = ref(null);
 async function printDate() {
-    console.log('Selected date:', selectedDate.value);
     const apiUrl = `${process.env.VUE_APP_URL}/user-privious-score/${username}/${selectedDate.value}`;
     const fetchData = await fetch(apiUrl, {
         method: 'GET',
@@ -93,7 +92,6 @@ async function printDate() {
     const json = await fetchData.json();
     if (json.data) {
         priviousScore.value = json.data;
-        console.log('Previous Score Data:', priviousScore.value);
     }
     else {
         console.log('No data found for the selected date.');
@@ -179,7 +177,7 @@ async function printDate() {
                             <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
                                 <div class="flex items-center justify-between mb-4">
                                     <h3 class="text-lg font-semibold text-gray-800">
-                                        Previous Performance
+                                        Previous Score
                                     </h3>
                                     <span class="text-sm text-gray-500">
                                         {{ selectedDate }}
@@ -216,8 +214,7 @@ async function printDate() {
                                     <div class="p-4 bg-green-100 rounded-lg text-center border border-green-300">
                                         <p class="text-xs text-green-700 mb-1">Total Score</p>
                                         <p class="text-3xl font-extrabold text-green-800">
-                                            {{ (priviousScore.mcqScore || 0) + (priviousScore.numberBowlingScore || 0)
-                                            }}
+                                            {{ (priviousScore.mcqScore || 0) + (priviousScore.numberBowlingScore || 0)}}
                                         </p>
                                     </div>
                                 </div>
