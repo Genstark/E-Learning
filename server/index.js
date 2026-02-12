@@ -386,9 +386,9 @@ app.post('/api/submit/daily-tasks', async (req, res) => {
 
 // home page route
 app.get(/.*/, async (req, res) => {
-    // const indexpath = await fetch(process.env.DEPLOY_PAGE_URL, { method: 'GET' });
-    // res.send(await indexpath.text());
-    res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+    const indexpath = await fetch(process.env.DEPLOY_PAGE_URL, { method: 'GET' });
+    res.send(await indexpath.text());
+    // res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });
 
 let job = cron.schedule("* * * * * *", async () => {
