@@ -384,11 +384,14 @@ app.post('/api/submit/daily-tasks', async (req, res) => {
     res.status(200).json({ message: 'Daily tasks submitted successfully', ok: true });
 });
 
+// Thinknova
 // home page route
 app.get(/.*/, async (req, res) => {
-    const indexpath = await fetch(process.env.DEPLOY_PAGE_URL, { method: 'GET' });
-    res.send(await indexpath.text());
-    // res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+    if(process.env.npm_lifecycle_event === 'start'){
+        const indexpath = await fetch(process.env.DEPLOY_PAGE_URL, { method: 'GET' });
+        res.send(await indexpath.text());
+    }
+    res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });
 
 let job = cron.schedule("* * * * * *", async () => {
@@ -411,7 +414,7 @@ app.listen(PORT, () => {
 });
 
 
-const canRunNgrok = (process.env.npm_lifecycle_event === 'prod');
+const canRunNgrok = process.env.npm_lifecycle_event === 'prod';
 if (canRunNgrok) {
     ngrok.connect({ addr: PORT, authtoken: process.env.NGROK })
         .then(listener => console.log(`Ingress established at: ${listener.url()}`));
