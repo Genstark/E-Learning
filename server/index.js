@@ -93,7 +93,7 @@ app.post('/api/reset-email', async (req, res) => {
     }
 
     if (req.body.task === 'resetEmail') {
-        const { userName, userEmail, confirmEmail } = req.body;
+        const { userEmail, confirmEmail } = req.body;
         try {
             await client.db("E-Learning").collection("users").updateOne(
                 { email: userEmail },
@@ -286,7 +286,7 @@ app.get('/api/user-privious-score/:user/:date', async (req, res) => {
         const username = req.params.user;
         const last_score_date = req.params.date;
         const download = await downloadDataByDate('downLoadByDate', last_score_date);
-        for (let i=0; i < download.data.length; i++) {
+        for (let i = 0; i < download.data.length; i++) {
             if (download.data[i].userName === username) {
                 return res.status(200).json({ message: 'got the username', ok: true, user: username, data: download.data[i] });
             }
@@ -326,7 +326,7 @@ app.get('/api/download-score', async (req, res) => {
     // const getsocreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
     console.log('get all scoreboard data');
     const upload = await downloadData('download');
-    if(!upload || !upload.data) {
+    if (!upload || !upload.data) {
         return res.status(404).json({ message: 'No scoreboard data found', ok: false });
     }
     res.status(200).json({ message: 'Uploaded to S3', ok: true, upload });
@@ -387,11 +387,11 @@ app.post('/api/submit/daily-tasks', async (req, res) => {
 // Thinknova
 // home page route
 app.get(/.*/, async (req, res) => {
-    if(process.env.npm_lifecycle_event === 'start'){
-        const indexpath = await fetch(process.env.DEPLOY_PAGE_URL, { method: 'GET' });
-        res.send(await indexpath.text());
+    if (process.env.npm_lifecycle_event === 'start') {
+        const indexpath = await fetch(process.env.DEPLOY_PAGE_URL, { method: 'GET', headers: { 'Content-Type': 'text/html' } });
+        return res.status(200).send(await indexpath.text());
     }
-    res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+    return res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });
 
 let job = cron.schedule("* * * * * *", async () => {
