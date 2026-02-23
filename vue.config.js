@@ -3,8 +3,8 @@ const { defineConfig } = require('@vue/cli-service')
 const Dotenv = require('dotenv-webpack');
 
 module.exports = defineConfig({
+  // publicPath: './',
   transpileDependencies: true,
-  // publicPath: '',
   configureWebpack: {
     plugins: [
       // Define Vue feature flags

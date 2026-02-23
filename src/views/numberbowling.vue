@@ -409,7 +409,7 @@ function stop() {
                         <!-- <p v-if="penaltyTime > 0" class="text-red-600 font-bold">
                             ⏰ Total Penalty: +{{ Math.floor(penaltyTime / 60) }}:{{ String(penaltyTime % 60).padStart(2, '0') }}
                         </p> -->
-                        <p>✅ Cleared: {{ usedTargets }} / 10</p>
+                        <p>✅ Number Cleared: {{ usedTargets }} / 10</p>
                     </div>
                 </div>
 

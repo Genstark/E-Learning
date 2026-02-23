@@ -12,12 +12,22 @@ const cron = require('node-cron'); // not required but useful for scheduling
 const googleAPI = require('./utils/googleAPI');
 const { encryptToken, decryptToken } = require('./utils/Encryption');
 const { uploadData, downloadData, downloadDataByDate } = require('./utils/uploadingData');
+const { S3Client, ListObjectsV2Command, GetObjectCommand } = require("@aws-sdk/client-s3");
+const fs = require("fs");
 require('dotenv').config();
 
 const app = express();
 let rolldicenumber = [];
 let questions = [];
 let SECRET_KEY = null;
+
+const s3 = new S3Client({
+    region: "ap-south-1",
+    credentials: {
+        accessKeyId: process.env.PAGE_ACCESS_KEY,
+        secretAccessKey: process.env.PAGE_SCREATE_KEY,
+    },
+});
 
 // Middleware to parse JSON requests
 app.use(cors({
@@ -74,10 +84,10 @@ app.get('/api/validate-token', authenticateToken, async (req, res) => {
             return res.status(401).json({ error: 'Invalid token', ok: false });
         }
         // console.log("Token is valid for user:", req.user);
-        res.status(200).json({ message: 'Token is valid', ok: true, user: req.user });
+        return res.status(200).json({ message: 'Token is valid', ok: true, user: req.user });
     }
     catch (error) {
-        res.status(500).json({ error: 'Internal server error', ok: false });
+        return res.status(500).json({ error: 'Internal server error', ok: false });
     }
 });
 
@@ -89,7 +99,7 @@ app.post('/api/reset-email', async (req, res) => {
             console.log('user not found');
             return res.status(400).json({ error: 'User not found', ok: false });
         }
-        res.status(200).json({ message: 'got the message', ok: true, userName: findUser.name, userEmail: findUser.email });
+        return res.status(200).json({ message: 'got the message', ok: true, userName: findUser.name, userEmail: findUser.email });
     }
 
     if (req.body.task === 'resetEmail') {
@@ -99,10 +109,10 @@ app.post('/api/reset-email', async (req, res) => {
                 { email: userEmail },
                 { $set: { email: confirmEmail } }
             );
-            res.status(200).json({ message: 'Email updated successfully', ok: true });
+            return res.status(200).json({ message: 'Email updated successfully', ok: true });
         } catch (error) {
             console.error("Error updating email:", error);
-            res.status(500).json({ error: 'Internal server error', ok: false });
+            return res.status(500).json({ error: 'Internal server error', ok: false });
         }
     }
 });
@@ -115,7 +125,7 @@ app.post('/api/reset-password', async (req, res) => {
         if (!findEmail || !findName || findEmail.email !== findName.email) {
             return res.status(400).json({ error: 'User not found', ok: false });
         }
-        res.status(200).json({ message: 'got the message', ok: true, userEmail: findEmail.email, userName: findName.name });
+        return res.status(200).json({ message: 'got the message', ok: true, userEmail: findEmail.email, userName: findName.name });
     }
 
     if (req.body.task === 'resetPassword') {
@@ -126,10 +136,10 @@ app.post('/api/reset-password', async (req, res) => {
                 { email: userEmail },
                 { $set: { password: hashedPassword } }
             );
-            res.status(200).json({ message: 'Password reset successfully', ok: true });
+            return res.status(200).json({ message: 'Password reset successfully', ok: true });
         } catch (error) {
             console.error("Error resetting password:", error);
-            res.status(500).json({ error: 'Internal server error', ok: false });
+            return res.status(500).json({ error: 'Internal server error', ok: false });
         }
     }
 });
@@ -164,11 +174,11 @@ app.post('/api/signup', async (req, res) => {
             email,
             password: hashedPassword
         });
-        res.status(200).json({ message: 'User created successfully', ok: true });
+        return res.status(200).json({ message: 'User created successfully', ok: true });
     } catch (error) {
         console.error('something invalid from input');
         console.error("Error inserting user:", error);
-        res.status(500).json({ error: 'Internal server error', ok: false });
+        return res.status(500).json({ error: 'Internal server error', ok: false });
     }
 });
 
@@ -188,9 +198,9 @@ app.post('/api/login', async (req, res) => {
             res.cookie('token', token, { httpOnly: false, secure: true, sameSite: "Strict", maxAge: 23 * 60 * 60 * 1000 });
             return res.status(200).json({ message: 'Login successful', ok: true, token, user: user.name });
         }
-        res.status(401).json({ error: 'Invalid email or password' });
+        return res.status(401).json({ error: 'Invalid email or password' });
     } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
@@ -208,7 +218,7 @@ app.get('/api/repeat-check/:user', async (req, res) => {
         }
     }
     catch (error) {
-        res.status(500).json({ error: 'Internal server error', ok: false });
+        return res.status(500).json({ error: 'Internal server error', ok: false });
     }
 });
 
@@ -248,7 +258,7 @@ app.get('/api/roll-dice', async (req, res) => {
         }
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
@@ -262,9 +272,9 @@ app.get('/api/daily-tasks/scoreboard', async (req, res) => {
         const getScore = await downloadData('download');
         const scoreboardData = getScore && getScore.data ? getScore.data : [];
         const rankedData = await rankPlayers(scoreboardData);
-        res.status(200).json({ scoreData: rankedData, ok: true });
+        return res.status(200).json({ scoreData: rankedData, ok: true });
     } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
@@ -275,9 +285,9 @@ app.get('/api/profile/:user', async (req, res) => {
         if (!userProfileData) {
             return res.status(404).json({ message: 'User not found', ok: false });
         }
-        res.status(200).json({ data: userProfileData, ok: true });
+        return res.status(200).json({ data: userProfileData, ok: true });
     } catch (error) {
-        res.status(500).json({ error: 'Internal server error', ok: false });
+        return res.status(500).json({ error: 'Internal server error', ok: false });
     }
 });
 
@@ -291,11 +301,11 @@ app.get('/api/user-privious-score/:user/:date', async (req, res) => {
                 return res.status(200).json({ message: 'got the username', ok: true, user: username, data: download.data[i] });
             }
         }
-        res.status(404).json({ message: 'Data not found', ok: false, user: username, data: false });
+        return res.status(404).json({ message: 'Data not found', ok: false, user: username, data: false });
     }
     catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Internal server error', ok: false });
+        return res.status(500).json({ error: 'Internal server error', ok: false });
     }
 });
 
@@ -316,9 +326,9 @@ app.get('/api/user-score/:user', async (req, res) => {
                 return res.status(200).json({ data: userScoreData[i], ok: true });
             }
         }
-        res.status(200).json({ message: 'No score data for today', ok: false, data: { email: userScoreData[0].userEmail } });
+        return res.status(200).json({ message: 'No score data for today', ok: false, data: { email: userScoreData[0].userEmail } });
     } catch (error) {
-        res.status(500).json({ error: 'Internal server error', ok: false });
+        return res.status(500).json({ error: 'Internal server error', ok: false });
     }
 });
 
@@ -329,7 +339,7 @@ app.get('/api/download-score', async (req, res) => {
     if (!upload || !upload.data) {
         return res.status(404).json({ message: 'No scoreboard data found', ok: false });
     }
-    res.status(200).json({ message: 'Uploaded to S3', ok: true, upload });
+    return res.status(200).json({ message: 'Uploaded to S3', ok: true, upload });
 });
 
 function convertTimeToSeconds(timeStr) {
@@ -381,17 +391,74 @@ app.post('/api/submit/daily-tasks', async (req, res) => {
     } catch (error) {
         console.error("Error submitting daily tasks:", error);
     }
-    res.status(200).json({ message: 'Daily tasks submitted successfully', ok: true });
+    return res.status(200).json({ message: 'Daily tasks submitted successfully', ok: true });
 });
+
+
+async function streamToBuffer(stream) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        stream.on("data", chunk => chunks.push(chunk));
+        stream.on("error", reject);
+        stream.on("end", () => resolve(Buffer.concat(chunks)));
+    });
+}
+
+async function downloaddistfolder() {
+    const bucket = process.env.BUCKET_NAME;
+    const prefix = "dist/";
+    try {
+        // Step 1: List files
+        const listCommand = new ListObjectsV2Command({
+            Bucket: bucket,
+            Prefix: prefix
+        });
+        const listResponse = await s3.send(listCommand);
+        console.log(listResponse);
+        if (!listResponse.Contents) {
+            console.log("No files found");
+            return;
+        }
+
+        // Step 2: Download each file
+        for (const file of listResponse.Contents) {
+            const key = file.Key;
+            if (key.endsWith("/")) {
+                continue;
+            }
+            console.log("Downloading:", key);
+            const getCommand = new GetObjectCommand({
+                Bucket: bucket,
+                Key: key
+            });
+            const response = await s3.send(getCommand);
+            const buffer = await streamToBuffer(response.Body);
+            const savePath = path.join(key);
+            fs.mkdirSync(path.dirname(savePath), { recursive: true });
+            fs.writeFileSync(savePath, buffer);
+        }
+        console.log("✅ dist folder downloaded");
+    }
+    catch (err) {
+        console.error(err);
+    }
+}
+
+(async () => {
+    if (process.env.npm_lifecycle_event === 'start') {
+        await downloaddistfolder();
+    }
+})();
 
 // Thinknova
 // home page route
 app.get(/.*/, async (req, res) => {
     if (process.env.npm_lifecycle_event === 'start') {
-        const indexpath = await fetch(process.env.DEPLOY_PAGE_URL, { method: 'GET', headers: { 'Content-Type': 'text/html' } });
-        return res.status(200).send(await indexpath.text());
+        return res.sendFile(path.join(__dirname, '../dist', 'index.html'));
     }
-    return res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+    else {
+        return res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+    }
 });
 
 let job = cron.schedule("* * * * * *", async () => {
