@@ -12,22 +12,12 @@ const cron = require('node-cron'); // not required but useful for scheduling
 const googleAPI = require('./utils/googleAPI');
 const { encryptToken, decryptToken } = require('./utils/Encryption');
 const { uploadData, downloadData, downloadDataByDate } = require('./utils/uploadingData');
-const { S3Client, ListObjectsV2Command, GetObjectCommand } = require("@aws-sdk/client-s3");
-const fs = require("fs");
 require('dotenv').config();
 
 const app = express();
 let rolldicenumber = [];
 let questions = [];
 let SECRET_KEY = null;
-
-const s3 = new S3Client({
-    region: "ap-south-1",
-    credentials: {
-        accessKeyId: process.env.PAGE_ACCESS_KEY,
-        secretAccessKey: process.env.PAGE_SCREATE_KEY,
-    },
-});
 
 // Middleware to parse JSON requests
 app.use(cors({
@@ -394,61 +384,6 @@ app.post('/api/submit/daily-tasks', async (req, res) => {
     return res.status(200).json({ message: 'Daily tasks submitted successfully', ok: true });
 });
 
-
-async function streamToBuffer(stream) {
-    return new Promise((resolve, reject) => {
-        const chunks = [];
-        stream.on("data", chunk => chunks.push(chunk));
-        stream.on("error", reject);
-        stream.on("end", () => resolve(Buffer.concat(chunks)));
-    });
-}
-
-async function downloaddistfolder() {
-    const bucket = process.env.BUCKET_NAME;
-    const prefix = "dist/";
-    try {
-        // Step 1: List files
-        const listCommand = new ListObjectsV2Command({
-            Bucket: bucket,
-            Prefix: prefix
-        });
-        const listResponse = await s3.send(listCommand);
-        console.log(listResponse);
-        if (!listResponse.Contents) {
-            console.log("No files found");
-            return;
-        }
-
-        // Step 2: Download each file
-        for (const file of listResponse.Contents) {
-            const key = file.Key;
-            if (key.endsWith("/")) {
-                continue;
-            }
-            console.log("Downloading:", key);
-            const getCommand = new GetObjectCommand({
-                Bucket: bucket,
-                Key: key
-            });
-            const response = await s3.send(getCommand);
-            const buffer = await streamToBuffer(response.Body);
-            const savePath = path.join(key);
-            fs.mkdirSync(path.dirname(savePath), { recursive: true });
-            fs.writeFileSync(savePath, buffer);
-        }
-        console.log("✅ dist folder downloaded");
-    }
-    catch (err) {
-        console.error(err);
-    }
-}
-
-(async () => {
-    if (process.env.npm_lifecycle_event === 'start') {
-        await downloaddistfolder();
-    }
-})();
 
 // Thinknova
 // home page route
