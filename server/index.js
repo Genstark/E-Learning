@@ -275,6 +275,7 @@ app.get('/api/profile/:user', async (req, res) => {
         if (!userProfileData) {
             return res.status(404).json({ message: 'User not found', ok: false });
         }
+        console.log(userProfileData);
         return res.status(200).json({ data: userProfileData, ok: true });
     } catch (error) {
         return res.status(500).json({ error: 'Internal server error', ok: false });
@@ -308,7 +309,7 @@ app.get('/api/user-score/:user', async (req, res) => {
             if (!userEmail) {
                 return res.status(404).json({ message: 'User not found', ok: false });
             }
-            return res.status(200).json({ message: 'No today score found', ok: false, email: userEmail.email });
+            return res.status(200).json({ message: 'No today score found', ok: false, data: { email: userEmail.email } });
         }
         const todayDate = new Date().toISOString().slice(0, 10);
         for (let i = 0; i < userScoreData.length; i++) {
