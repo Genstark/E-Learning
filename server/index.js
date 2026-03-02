@@ -386,7 +386,7 @@ app.post('/api/submit/daily-tasks', async (req, res) => {
 });
 
 
-// Thinknova
+// PlayBit
 // home page route
 app.get(/.*/, async (req, res) => {
     if (process.env.npm_lifecycle_event === 'start') {
