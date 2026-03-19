@@ -16,7 +16,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-    console.log('Score component unmounted');
+    // console.log('Score component unmounted');
 });
 </script>
 

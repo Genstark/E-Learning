@@ -13,7 +13,6 @@ const confirmEmail = ref('');
 const buttonReset_visible = ref(false);
 
 async function checkConfirmation() {
-    console.log('Checking confirmation for:', userEmail.value, userName.value);
     const response = await fetch(`${process.env.VUE_APP_URL}/reset-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -40,7 +39,6 @@ async function resetEmail() {
         alert('Email do not match!');
         return;
     }
-    console.log('Resetting password for:', userEmail.value, userName.value);
     const response = await fetch(`${process.env.VUE_APP_URL}/reset-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

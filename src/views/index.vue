@@ -10,7 +10,7 @@ import HeaderComponent from '@/components/Header.vue';
 // import Footer from '@/components/Footer.vue';
 import Cards from '@/components/Cards.vue';
 import numberBowling from '../../public/images/numberBowlingGame.png';
-import taskimage from '../../public/images/green-page.jpg';
+import taskimage from '../../public/images/daily-task.png';
 import library from '../../public/images/library.jpg';
 import { onUnmounted } from 'vue';
 
@@ -41,6 +41,6 @@ const cards = [
 ];
 
 onUnmounted(() => {
-    console.log('Index component unmounted');
+    // console.log('Index component unmounted');
 });
 </script>

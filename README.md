@@ -1,4 +1,4 @@
-# e-learning
+# PlayBit
 
 ## About This App
 
