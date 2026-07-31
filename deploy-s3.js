@@ -5,8 +5,8 @@ const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 require('dotenv').config();
 
 const distPath = path.resolve(__dirname, 'dist');
-const bucketName = process.env.BUCKET_NAME || process.env.AWS_S3_BUCKET;
-const region = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-south-1';
+const bucketName = process.env.BUCKET_NAME;
+const region = 'ap-south-1';
 
 if (!bucketName) {
     console.error('Missing S3 bucket name. Set BUCKET_NAME in .env or AWS_S3_BUCKET in environment.');
