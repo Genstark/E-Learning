@@ -12,7 +12,8 @@
     "dev": "nodemon server/index.js",
     "prod": "node server/index.js",
     "postinstall": "node server/utils/postinstall.js",
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "deploy:s3": "node deploy-s3.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.995.0",
