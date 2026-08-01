@@ -5,7 +5,7 @@ const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 require('dotenv').config();
 
 const distPath = path.resolve(__dirname, 'dist');
-const bucketName = process.env.BUCKET_NAME;
+const bucketName = process.env.AWS_BUCKET_NAME;
 const region = 'ap-south-1';
 
 if (!bucketName) {
