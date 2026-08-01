@@ -8,6 +8,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      AWS_BUCKET_NAME: ${{ secrets.AWS_BUCKET_NAME }}
 
     steps:
       - name: Checkout repository
@@ -27,7 +29,6 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-          bucket: ${{ secrets.AWS_BUCKET_NAME }}
 
       - name: Lint
         run: npm run lint
