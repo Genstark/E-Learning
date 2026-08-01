@@ -6,8 +6,8 @@ require('dotenv').config();
 const s3 = new S3Client({
     region: "ap-south-1",
     credentials: {
-        accessKeyId: process.env.PAGE_ACCESS_KEY,
-        secretAccessKey: process.env.PAGE_SCREATE_KEY,
+        accessKeyId: process.env.AWS_PAGE_ACCESS_KEY,
+        secretAccessKey: process.env.AWS_PAGE_SCREATE_KEY,
     },
 });
 
@@ -27,7 +27,7 @@ async function downloaddistfolder() {
         console.log("folder already exists, skipping download");
         return;
     }
-    const bucket = process.env.BUCKET_NAME;
+    const bucket = process.env.AWS_BUCKET_NAME;
     const prefix = "dist/";
     try {
         // Step 1: List files
