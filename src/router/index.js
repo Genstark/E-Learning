@@ -81,21 +81,21 @@ function getCookie(name) {
 router.beforeEach(async (to, from, next) => {
     // const token = getCookie('token') ? getCookie('token') : localStorage.getItem('token');
     const token = getCookie('token');
-    console.log('🔐 Router Guard - Navigating to:', to.path);
-    console.log('🍪 Token from cookies:', getCookie('token'));
-    console.log('🔑 Current token:', token);
+    // console.log('🔐 Router Guard - Navigating to:', to.path);
+    // console.log('🍪 Token from cookies:', getCookie('token'));
+    // console.log('🔑 Current token:', token);
 
     // Agar user login, signup, reset page par ja raha hai, guard skip karo
     if (to.path === '/login' || to.path === '/signup' || to.path === '/reset-password') {
-        console.log('✅ Skipping guard for login page');
+        // console.log('✅ Skipping guard for login page');
         return next();
     }
 
     if (to.path === '/') {
-        console.log('✅ Skipping guard for home page');
+        // console.log('✅ Skipping guard for home page');
         const useris = localStorage.getItem('user');
         if (useris) {
-            console.log('➡️ Redirecting to user home:', `/${useris}`);
+            // console.log('➡️ Redirecting to user home:', `/${useris}`);
             return next({path: `/${useris}`});
         }
         return next({path: '/login'});
@@ -103,7 +103,7 @@ router.beforeEach(async (to, from, next) => {
 
     // Agar token nahi hai, login par bhejo (sirf agar already login par nahi ho)
     if (!token) {
-        console.log('❌ No token found, redirecting to login');
+        // console.log('❌ No token found, redirecting to login');
         if (to.path !== '/login' && to.path !== '/signup') {
             return next({ path: '/login' });
         } else {
@@ -112,7 +112,7 @@ router.beforeEach(async (to, from, next) => {
     }
 
     try {
-        console.log('🔍 Validating token with server...');
+        // console.log('🔍 Validating token with server...');
         const response = await fetch(`${process.env.VUE_APP_URL}/validate-token`, {
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -121,13 +121,13 @@ router.beforeEach(async (to, from, next) => {
             credentials: 'include'
         });
 
-        console.log('📊 Token validation response status:', response.status);
+        // console.log('📊 Token validation response status:', response.status);
         if (response.ok) {
             // const data = await response.json();
-            console.log('✅ Token is valid');
+            // console.log('✅ Token is valid');
             return next();
         } else {
-            console.log('❌ Token invalid, cleaning up...');
+            // console.log('❌ Token invalid, cleaning up...');
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -139,7 +139,7 @@ router.beforeEach(async (to, from, next) => {
             }
         }
     } catch (error) {
-        console.error("🚨 Error validating token:", error);
+        // console.error("🚨 Error validating token:", error);
         // Cleanup on error bhi
         localStorage.removeItem('token');
         document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";

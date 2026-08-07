@@ -17,14 +17,14 @@ async function generateText(prompt) {
                     {
                         text: `
                             You are a fun and engaging teacher who creates educational puzzles.
-                            Your job is to turn the following text into a mix of multiple-choice generate 10 questions.
+                            Your job is to turn the following text into a mix of multiple-choice total generate 10 questions.
                             question like:
                             {
                                 "questions": [
                                 {
                                     "type": "multiple_choice",
                                     "question": "...",
-                                    "options": ["...", "..."],
+                                    "options": ["...", "...", "...", "..."] 4 options,
                                     "correctAnswer": "write here correct index of options in number not in string"
                                 }
                             ]} and ${prompt}

@@ -11,7 +11,7 @@ const ngrok = require('@ngrok/ngrok');
 const cron = require('node-cron'); // not required but useful for scheduling
 const googleAPI = require('./utils/googleAPI');
 const { encryptToken, decryptToken } = require('./utils/Encryption');
-const { uploadData, downloadData } = require('./utils/uploadingData');
+const { uploadData, downloadData, downloadDataByDate } = require('./utils/uploadingData');
 require('dotenv').config();
 
 const app = express();
@@ -74,10 +74,10 @@ app.get('/api/validate-token', authenticateToken, async (req, res) => {
             return res.status(401).json({ error: 'Invalid token', ok: false });
         }
         // console.log("Token is valid for user:", req.user);
-        res.status(200).json({ message: 'Token is valid', ok: true, user: req.user });
+        return res.status(200).json({ message: 'Token is valid', ok: true, user: req.user });
     }
     catch (error) {
-        res.status(500).json({ error: 'Internal server error', ok: false });
+        return res.status(500).json({ error: 'Internal server error', ok: false });
     }
 });
 
@@ -89,20 +89,20 @@ app.post('/api/reset-email', async (req, res) => {
             console.log('user not found');
             return res.status(400).json({ error: 'User not found', ok: false });
         }
-        res.status(200).json({ message: 'got the message', ok: true, userName: findUser.name, userEmail: findUser.email });
+        return res.status(200).json({ message: 'got the message', ok: true, userName: findUser.name, userEmail: findUser.email });
     }
 
     if (req.body.task === 'resetEmail') {
-        const { userName, userEmail, confirmEmail } = req.body;
+        const { userEmail, confirmEmail } = req.body;
         try {
             await client.db("E-Learning").collection("users").updateOne(
                 { email: userEmail },
                 { $set: { email: confirmEmail } }
             );
-            res.status(200).json({ message: 'Email updated successfully', ok: true });
+            return res.status(200).json({ message: 'Email updated successfully', ok: true });
         } catch (error) {
             console.error("Error updating email:", error);
-            res.status(500).json({ error: 'Internal server error', ok: false });
+            return res.status(500).json({ error: 'Internal server error', ok: false });
         }
     }
 });
@@ -115,7 +115,7 @@ app.post('/api/reset-password', async (req, res) => {
         if (!findEmail || !findName || findEmail.email !== findName.email) {
             return res.status(400).json({ error: 'User not found', ok: false });
         }
-        res.status(200).json({ message: 'got the message', ok: true, userEmail: findEmail.email, userName: findName.name });
+        return res.status(200).json({ message: 'got the message', ok: true, userEmail: findEmail.email, userName: findName.name });
     }
 
     if (req.body.task === 'resetPassword') {
@@ -126,10 +126,10 @@ app.post('/api/reset-password', async (req, res) => {
                 { email: userEmail },
                 { $set: { password: hashedPassword } }
             );
-            res.status(200).json({ message: 'Password reset successfully', ok: true });
+            return res.status(200).json({ message: 'Password reset successfully', ok: true });
         } catch (error) {
             console.error("Error resetting password:", error);
-            res.status(500).json({ error: 'Internal server error', ok: false });
+            return res.status(500).json({ error: 'Internal server error', ok: false });
         }
     }
 });
@@ -164,11 +164,11 @@ app.post('/api/signup', async (req, res) => {
             email,
             password: hashedPassword
         });
-        res.status(200).json({ message: 'User created successfully', ok: true });
+        return res.status(200).json({ message: 'User created successfully', ok: true });
     } catch (error) {
         console.error('something invalid from input');
         console.error("Error inserting user:", error);
-        res.status(500).json({ error: 'Internal server error', ok: false });
+        return res.status(500).json({ error: 'Internal server error', ok: false });
     }
 });
 
@@ -188,9 +188,9 @@ app.post('/api/login', async (req, res) => {
             res.cookie('token', token, { httpOnly: false, secure: true, sameSite: "Strict", maxAge: 23 * 60 * 60 * 1000 });
             return res.status(200).json({ message: 'Login successful', ok: true, token, user: user.name });
         }
-        res.status(401).json({ error: 'Invalid email or password' });
+        return res.status(401).json({ error: 'Invalid email or password' });
     } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
@@ -208,7 +208,7 @@ app.get('/api/repeat-check/:user', async (req, res) => {
         }
     }
     catch (error) {
-        res.status(500).json({ error: 'Internal server error', ok: false });
+        return res.status(500).json({ error: 'Internal server error', ok: false });
     }
 });
 
@@ -248,7 +248,7 @@ app.get('/api/roll-dice', async (req, res) => {
         }
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
@@ -262,9 +262,9 @@ app.get('/api/daily-tasks/scoreboard', async (req, res) => {
         const getScore = await downloadData('download');
         const scoreboardData = getScore && getScore.data ? getScore.data : [];
         const rankedData = await rankPlayers(scoreboardData);
-        res.status(200).json({ scoreData: rankedData, ok: true });
+        return res.status(200).json({ scoreData: rankedData, ok: true });
     } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
@@ -275,18 +275,28 @@ app.get('/api/profile/:user', async (req, res) => {
         if (!userProfileData) {
             return res.status(404).json({ message: 'User not found', ok: false });
         }
-        res.status(200).json({ data: userProfileData, ok: true });
+        console.log(userProfileData);
+        return res.status(200).json({ data: userProfileData, ok: true });
     } catch (error) {
-        res.status(500).json({ error: 'Internal server error', ok: false });
+        return res.status(500).json({ error: 'Internal server error', ok: false });
     }
 });
 
-app.get('/api/user-privious-score/:user', async(req, res) => {
-    try{
+app.get('/api/user-privious-score/:user/:date', async (req, res) => {
+    try {
         const username = req.params.user;
+        const last_score_date = req.params.date;
+        const download = await downloadDataByDate('downLoadByDate', last_score_date);
+        for (let i = 0; i < download.data.length; i++) {
+            if (download.data[i].userName === username) {
+                return res.status(200).json({ message: 'got the username', ok: true, user: username, data: download.data[i] });
+            }
+        }
+        return res.status(404).json({ message: 'Data not found', ok: false, user: username, data: false });
     }
-    catch(error){
+    catch (error) {
         console.error(error);
+        return res.status(500).json({ error: 'Internal server error', ok: false });
     }
 });
 
@@ -299,18 +309,17 @@ app.get('/api/user-score/:user', async (req, res) => {
             if (!userEmail) {
                 return res.status(404).json({ message: 'User not found', ok: false });
             }
-            return res.status(200).json({ message: 'No score data found for user', ok: false, email: userEmail.email });
+            return res.status(200).json({ message: 'No today score found', ok: false, data: { email: userEmail.email } });
         }
         const todayDate = new Date().toISOString().slice(0, 10);
         for (let i = 0; i < userScoreData.length; i++) {
             if (userScoreData[i].submissionDate === todayDate) {
-                res.status(200).json({ data: userScoreData[i], ok: true });
-                return;
+                return res.status(200).json({ data: userScoreData[i], ok: true });
             }
         }
-        res.status(200).json({ message: 'No score data for today', ok: false, data: { email: userScoreData[0].userEmail } });
+        return res.status(200).json({ message: 'No score data for today', ok: false, data: { email: userScoreData[0].userEmail } });
     } catch (error) {
-        res.status(500).json({ error: 'Internal server error', ok: false });
+        return res.status(500).json({ error: 'Internal server error', ok: false });
     }
 });
 
@@ -318,7 +327,10 @@ app.get('/api/download-score', async (req, res) => {
     // const getsocreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
     console.log('get all scoreboard data');
     const upload = await downloadData('download');
-    res.status(200).json({ message: 'Uploaded to S3', ok: true, upload });
+    if (!upload || !upload.data) {
+        return res.status(404).json({ message: 'No scoreboard data found', ok: false });
+    }
+    return res.status(200).json({ message: 'Uploaded to S3', ok: true, upload });
 });
 
 function convertTimeToSeconds(timeStr) {
@@ -364,17 +376,25 @@ app.post('/api/submit/daily-tasks', async (req, res) => {
     try {
         await client.db("E-Learning").collection("daily-tasks").insertOne(response);
         const getScoreboardData = await client.db("E-Learning").collection("daily-tasks").find().toArray();
-        await uploadData(getScoreboardData, 'upload');
+        const shortscoreData = await rankPlayers(getScoreboardData);
+        await uploadData(shortscoreData, 'upload');
         console.log("Daily tasks submitted successfully");
     } catch (error) {
         console.error("Error submitting daily tasks:", error);
     }
-    res.status(200).json({ message: 'Daily tasks submitted successfully', ok: true });
+    return res.status(200).json({ message: 'Daily tasks submitted successfully', ok: true });
 });
 
+
+// PlayBit
 // home page route
-app.get(/.*/, (req, res) => {
-    res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+app.get(/.*/, async (req, res) => {
+    if (process.env.npm_lifecycle_event === 'start') {
+        return res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+    }
+    else {
+        return res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+    }
 });
 
 let job = cron.schedule("* * * * * *", async () => {
@@ -396,7 +416,8 @@ app.listen(PORT, () => {
     console.log(`Server is running on port http://localhost:${PORT}`);
 });
 
-const canRunNgrok = true; // Set to true if you want to run ngrok
+
+const canRunNgrok = process.env.npm_lifecycle_event === 'prod';
 if (canRunNgrok) {
     ngrok.connect({ addr: PORT, authtoken: process.env.NGROK })
         .then(listener => console.log(`Ingress established at: ${listener.url()}`));

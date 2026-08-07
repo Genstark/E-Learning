@@ -109,9 +109,6 @@ function rollDice() {
                 }, 2000);
             }
         }, 1000);
-        
-        // ✅ DON'T RETURN - Let dice roll happen below
-        // return; // ❌ REMOVE THIS LINE
     }
 
     // Roll 4 dice
@@ -285,7 +282,7 @@ function resetGame() {
     isRollCooldown.value = false;
     rollCooldownRemaining.value = 0;
     isStopped.value = false;
-    gameStarted.value = false; // 👈 YE LINE ADD KARO
+    gameStarted.value = false;
 
     localStorage.setItem("bestScores", JSON.stringify(bestScores.value));
 
@@ -314,7 +311,7 @@ function stop() {
     isRollCooldown.value = false;
     rollCooldownRemaining.value = 0;
     startTime.value = null;
-    isStopped.value = true; // Mark as stopped
+    isStopped.value = true;
     message.value = 'Game stopped. Click "Roll Dice" to resume or "Reset" to start over.';
 }
 </script>
@@ -412,7 +409,7 @@ function stop() {
                         <!-- <p v-if="penaltyTime > 0" class="text-red-600 font-bold">
                             ⏰ Total Penalty: +{{ Math.floor(penaltyTime / 60) }}:{{ String(penaltyTime % 60).padStart(2, '0') }}
                         </p> -->
-                        <p>✅ Cleared: {{ usedTargets }} / 10</p>
+                        <p>✅ Number Cleared: {{ usedTargets }} / 10</p>
                     </div>
                 </div>
 

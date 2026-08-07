@@ -3,16 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": "v22.13.1"
+    "node": "22.13.1"
   },
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "dev": "nodemon server/index.js",
-    "start": "npm run build && node server/index.js"
+    "prod": "node server/index.js",
+    "postinstall": "node server/utils/postinstall.js",
+    "start": "node server/index.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.995.0",
     "@google/generative-ai": "^0.24.1",
     "autoprefixer": "^10",
     "bcrypt": "^6.0.0",
