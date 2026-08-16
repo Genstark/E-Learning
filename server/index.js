@@ -417,7 +417,7 @@ app.listen(PORT, () => {
 });
 
 
-const canRunNgrok = process.env.npm_lifecycle_event === 'prod';
+const canRunNgrok = process.env.npm_lifecycle_event === 'pre:prod';
 if (canRunNgrok) {
     ngrok.connect({ addr: PORT, authtoken: process.env.NGROK })
         .then(listener => console.log(`Ingress established at: ${listener.url()}`));
